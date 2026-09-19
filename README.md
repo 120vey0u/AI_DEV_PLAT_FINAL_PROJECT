@@ -144,4 +144,4 @@ Dự án này sử dụng **GitHub Actions** để tự động hóa toàn bộ 
 | 5 | **Frontend & Git Master** | `DuongVu` | Code React UI, quản lý Git/Merge conflict, viết hệ thống tài liệu. |
 
 ---
-*Dự án thuộc Đồ án môn học Ứng dụng AI & Quá trình triển khai phần mềm (Git · Docker · CI/CD).*
+*Dự án môn học Nền tảng phát triển Trí Tuệ Nhân Tạo*
