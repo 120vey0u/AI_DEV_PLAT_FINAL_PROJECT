@@ -47,7 +47,7 @@ flowchart LR
 ├── database/                 # Lưu trữ Database Scripts
 │   └── schema.sql            # Script khởi tạo bảng PostgreSQL
 ├── .github/workflows/        # Cấu hình CI/CD
-│   └── deploy.yml            # Pipeline GitHub Actions
+│   └── ci-cd.yml            # Pipeline GitHub Actions
 ├── Dockerfile                # File đóng gói image cho toàn bộ ứng dụng
 ├── .gitignore                # Danh sách file ẩn/bỏ qua khi commit Git
 └── README.md                 # Tài liệu dự án
