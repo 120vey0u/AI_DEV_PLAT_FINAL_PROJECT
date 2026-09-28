@@ -46,7 +46,13 @@ jobs:
         run: |
           if [ -n "$DATABASE_URL" ]; then
             echo "--> Đang kiểm tra kết nối tới Supabase Database..."
-            pg_isready -d "$DATABASE_URL" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
+            # Sử dụng psql kiểm tra trực tiếp URL hoặc pg_isready với hostname tách biệt
+            psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              echo "--> Kết nối Supabase thành công 100%!"
+            else
+              echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
+            fi
           else
             echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
           fi
