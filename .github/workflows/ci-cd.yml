@@ -45,15 +45,10 @@ jobs:
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
-          else
-            echo "--> Đang kiểm tra kết nối tới Supabase Database..."
-            PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-              echo "--> Kết nối Supabase thành công 100%!"
-            else
-              echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
-            fi
+            exit 0
           fi
+          echo "--> Đang kiểm tra kết nối tới Supabase Database..."
+          PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
