@@ -31,6 +31,8 @@ jobs:
 
       - name: Install PostgreSQL Client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      # 1. DATABASE CHECK
       - name: Validate database/schema.sql syntax on Local Test DB
         run: |
           if [ -f database/schema.sql ]; then
@@ -40,22 +42,25 @@ jobs:
           else
             echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
           fi
+
+      # 2. SUPABASE CONNECTION CHECK (Đã tối ưu cú pháp Bash & Timeout)
       - name: Test Connection to Supabase
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          if [ -n "$DATABASE_URL" ]; then
+          if [ -z "$DATABASE_URL" ]; then
+            echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
+          else
             echo "--> Đang kiểm tra kết nối tới Supabase Database..."
-            # Sử dụng psql kiểm tra trực tiếp URL hoặc pg_isready với hostname tách biệt
-            psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1
+            PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1
             if [ $? -eq 0 ]; then
               echo "--> Kết nối Supabase thành công 100%!"
             else
               echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
             fi
-          else
-            echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
           fi
+
+      # 3. BACKEND CHECK
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
@@ -72,6 +77,8 @@ jobs:
           else
             echo "--> Chưa có thư mục backend, bỏ qua."
           fi
+
+      # 4. FRONTEND CHECK
       - name: Set up Node.js 18
         uses: actions/setup-node@v4
         with:
