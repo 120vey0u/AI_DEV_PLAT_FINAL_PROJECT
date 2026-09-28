@@ -8,3 +8,5 @@ def health_check():
     return {"status": "ok"}
 
 app.include_router(sentiment.router, prefix="/api/v1")
+    return {"status": "ok"}
+
