@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS sentiment_history (
+    id SERIAL PRIMARY KEY,
+    input_text TEXT NOT NULL,
+    sentiment_result VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
