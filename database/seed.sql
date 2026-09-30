@@ -1,5 +1,22 @@
--- Dữ liệu mẫu (Data Seed) khớp với cấu trúc bảng hiện tại
-INSERT INTO sentiment_history (input_text, sentiment_result) VALUES
-('Sản phẩm dùng rất tuyệt vời, giao hàng nhanh chóng!', 'Positive'),
-('Dịch vụ chăm sóc khách hàng quá tệ, thất vọng.', 'Negative'),
-('Ứng dụng tạm ổn, cần cải thiện thêm giao diện.', 'Neutral');
+-- Dữ liệu mẫu (Data Seed) cho bảng sentiment_history
+INSERT INTO sentiment_history (user_id, input_text, sentiment_result) VALUES
+('user_001', 'Sản phẩm dùng rất tuyệt vời, giao hàng nhanh chóng!', 'Positive'),
+('user_002', 'Dịch vụ chăm sóc khách hàng quá tệ, thất vọng.', 'Negative'),
+('user_003', 'Ứng dụng tạm ổn, cần cải thiện thêm giao diện.', 'Neutral'),
+('user_004', 'Chất lượng quá kém, không như quảng cáo.', 'Negative'),
+('user_005', 'Rất hài lòng về cách phục vụ của shop.', 'Positive'),
+('user_006', 'Bình thường, không có gì đặc sắc lắm.', 'Neutral'),
+('user_007', 'Tuyệt đỉnh! Sẽ ủng hộ shop dài lâu.', 'Positive'),
+('user_008', 'Giao hàng chậm trễ, hộp bị móp méo.', 'Negative'),
+('user_009', 'Tạm được trong tầm giá này.', 'Neutral'),
+('user_010', 'Sản phẩm lỗi ngay lần đầu sử dụng, quá chán.', 'Negative'),
+('user_011', 'Đóng gói cẩn thận, hàng chuẩn chính hãng.', 'Positive'),
+('user_012', 'Nhân viên hỗ trợ nhiệt tình, giải đáp nhanh.', 'Positive'),
+('user_013', 'Không gian quán hơi ồn ào nhưng đồ uống ngon.', 'Neutral'),
+('user_014', 'Quá thất vọng với chất lượng dịch vụ lần này.', 'Negative'),
+('user_015', 'Tuyệt vời ông mặt trời, rất đáng tiền!', 'Positive'),
+('user_016', 'Màu sắc thực tế hơi khác so với hình ảnh.', 'Neutral'),
+('user_017', 'Hàng dùng cực kỳ mượt mà, rất ưng ý.', 'Positive'),
+('user_018', 'Thái độ nhân viên lúc giao hàng kém quá.', 'Negative'),
+('user_019', 'Chất lượng tương xứng với giá tiền.', 'Neutral'),
+('user_020', 'Tuyệt hảo! Không có điểm gì để chê.', 'Positive');
