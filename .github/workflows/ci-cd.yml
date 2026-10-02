@@ -116,9 +116,9 @@ jobs:
 
   deploy-frontend:
     name: Deploy Frontend to Vercel
-    needs: test-all
+    needs: [test-all, build-and-push]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && (needs.test-all.result == 'success')
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
