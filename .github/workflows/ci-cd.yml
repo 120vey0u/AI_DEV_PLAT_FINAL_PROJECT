@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
 jobs:
   test-all:
     name: Check Backend, Frontend & Database
@@ -30,6 +31,7 @@ jobs:
 
       - name: Install PostgreSQL Client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
       - name: Validate database/schema.sql syntax on Local Test DB
         run: |
           if [ -f database/schema.sql ]; then
@@ -39,6 +41,7 @@ jobs:
           else
             echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
           fi
+
       - name: Test Connection to Supabase
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -49,6 +52,7 @@ jobs:
           fi
           echo "--> Đang kiểm tra kết nối tới Supabase Database..."
           PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
@@ -65,10 +69,11 @@ jobs:
           else
             echo "--> Chưa có thư mục backend, bỏ qua."
           fi
-      - name: Set up Node.js 18
+
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Test Frontend Build
         run: |
@@ -83,6 +88,7 @@ jobs:
           else
             echo "--> Thư mục frontend chưa có hoặc file package.json bị rỗng, tự động bỏ qua check Frontend."
           fi
+
   build-and-push:
     name: Build & Push Docker Image
     needs: test-all
@@ -107,3 +113,21 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
             ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
+
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    needs: test-all
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
