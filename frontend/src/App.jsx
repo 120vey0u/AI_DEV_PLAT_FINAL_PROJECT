@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 function App() {
   const [text, setText] = useState("");
@@ -12,9 +13,18 @@ function App() {
 
     setTimeout(() => {
       setResult({
-        sentiment: "Positive",
-        score: "95%",
-        message: text
+        overall: "Đan xen",
+        highlightedText: [
+          { text: "Phong cảnh nơi đây thật sự ", sentiment: "neutral" },
+          { text: "thanh tịnh và đẹp đẽ", sentiment: "positive" },
+          { text: ", tuy nhiên tiếng gió rít đôi lúc hơi ", sentiment: "neutral" },
+          { text: "ồn ào và đáng sợ", sentiment: "negative" },
+          { text: ".", sentiment: "neutral" }
+        ],
+        aspects: [
+          { name: "Cảnh quan", score: 95, sentiment: "positive" },
+          { name: "Âm thanh", score: 50, sentiment: "negative" }
+        ]
       });
       setLoading(false);
     }, 2000);
@@ -47,10 +57,70 @@ function App() {
 
         {/* Khu vực kết quả hiện ra sau khi phân tích */}
         {result && !loading && (
-          <div className="mt-8 p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <h2 className="text-2xl font-serif text-yellow-100/90 mb-2">Response:</h2>
-            <p className="text-green-50 mb-1">State: <strong>{result.sentiment}</strong></p>
-            <p className="text-green-50/80 italic">"{result.message}"</p>
+          <div className="mt-8 p-6 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-xs font-semibold text-white/40 uppercase tracking-[0.2em] mb-4">Dissection Results:</h2>
+
+            {/* Box 1: Text Highlighting */}
+            <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
+
+              <p className="text-lg leading-loose font-light">
+                {/* Lệnh map() để lặp qua từng mảnh chữ */}
+                {result.highlightedText.map((item, index) => {
+
+                  // Mặc định chữ màu trắng nhạt
+                  let colorClass = "text-white/80";
+
+                  // Nếu là lời khen -> Nền xanh, chữ xanh sáng
+                  if (item.sentiment === "positive") {
+                    colorClass = "bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-medium border border-green-500/20";
+                  }
+
+                  // Nếu là lời chê -> Nền đỏ, chữ đỏ sáng
+                  if (item.sentiment === "negative") {
+                    colorClass = "bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-md font-medium border border-red-500/20";
+                  }
+
+                  return (
+                    <span key={index} className={colorClass}>
+                      {item.text}
+                    </span>
+                  );
+                })}
+              </p>
+            </div>
+
+            {/* Box 2: Biểu đồ thống kê (Recharts) */}
+            <div className="mt-4 h-64 p-4 rounded-xl bg-black/40 border border-white/5">
+              <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Details of every aspect</h3>
+
+              <ResponsiveContainer width="100%" height="80%">
+                {/* Đưa mảng result.aspects vào làm dữ liệu */}
+                <BarChart data={result.aspects}>
+                  {/* Trục ngang X hiển thị tên khía cạnh */}
+                  <XAxis dataKey="name" stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false}/>
+
+                  {/* Trục dọc Y (Ẩn đi cho thiết kế tối giản) */}
+                  <YAxis hide domain={[0, 100]} />
+
+                  {/* Hộp thoại nổi lên khi di chuột vào */}
+                  <Tooltip 
+                    cursor={{fill: '#ffffff10'}}
+                    contentStyle={{backgroundColor: '#000000cc', borderColor: '#ffffff20', borderRadius: '8px', color: '#fff'}}
+                  />
+
+                  {/* Cột dữ liệu */}
+                  <Bar dataKey="score" fill="#ffffff" radius={[6, 6, 6, 6]}>
+                    {/* Quét qua dữ liệu, tốt thì tô màu xanh, xấu thì tô màu đỏ */}
+                    {result.aspects.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.sentiment === 'positive' ? '#10b981' : '#ef4444'} />
+                    ))}
+                  </Bar>
+
+                </BarChart>
+
+              </ResponsiveContainer>
+            </div>
+
           </div>
         )}
 
