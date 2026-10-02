@@ -1,147 +1,16 @@
-# 🎭 Sentiment Analysis AI System
+# React + Vite
 
-[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-blue.svg)](#)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](#)
-[![Backend](https://img.shields.io/badge/API-FastAPI%20/%20Node.js-009688.svg)](#)
-[![Frontend](https://img.shields.io/badge/UI-React-61DAFB.svg)](#)
-[![Database](https://img.shields.io/badge/DB-PostgreSQL-336791.svg)](#)
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-Một ứng dụng phân tích cảm xúc văn bản toàn diện (End-to-End AI Application). Dự án tích hợp mô hình xử lý ngôn ngữ tự nhiên (NLP) qua API, đóng gói bằng Docker, tự động hóa triển khai (CI/CD) qua GitHub Actions và lưu trữ dữ liệu bền vững trên PostgreSQL.
+Currently, two official plugins are available:
 
-## 📑 Mục lục
-- [Kiến trúc Hệ thống](#-kiến-trúc-hệ-thống)
-- [Cấu trúc Thư mục](#-cấu-trúc-thư-mục)
-- [Yêu cầu Môi trường](#-yêu-cầu-môi-trường)
-- [Hướng dẫn Cài đặt & Chạy Local](#-hướng-dẫn-cài-đặt--chạy-local)
-- [Triển khai với Docker](#-triển-khai-với-docker)
-- [Quy trình CI/CD](#-quy-trình-cicd)
-- [Thành viên Nhóm](#-thành-viên-nhóm)
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
----
+## React Compiler
 
-## 🏗 Kiến trúc Hệ thống
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-Hệ thống được thiết kế theo mô hình Microservices tinh gọn, tách biệt hoàn toàn giữa UI (React), API logic và Database.
+## Expanding the Oxlint configuration
 
-```mermaid
-flowchart LR
-    A[Người dùng] -->|HTTPS| B(React Frontend)
-    B -->|REST API - JSON| C(API Backend)
-    C <-->|Request / Response| D[Hugging Face LLM API]
-    C -->|Log Text & Sentiment| E[(PostgreSQL)]
-```
-
----
-
-## 📂 Cấu trúc Thư mục
-
-```text
-.
-├── frontend/                 # Giao diện người dùng (React.js)
-│   ├── src/                  # Mã nguồn React (App.jsx, components/)
-│   ├── public/               # Tài nguyên tĩnh
-│   └── package.json          # Dependencies cho frontend
-├── backend/                  # API Server (FastAPI / Node.js)
-│   ├── main.py               # Logic xử lý API 
-│   └── requirements.txt      # Dependencies cho backend
-├── database/                 # Lưu trữ Database Scripts
-│   └── schema.sql            # Script khởi tạo bảng PostgreSQL
-├── .github/workflows/        # Cấu hình CI/CD
-│   └── ci-cd.yml            # Pipeline GitHub Actions
-├── Dockerfile                # File đóng gói image cho toàn bộ ứng dụng
-├── .gitignore                # Danh sách file ẩn/bỏ qua khi commit Git
-└── README.md                 # Tài liệu dự án
-```
-
----
-
-## ⚙️ Yêu cầu Môi trường
-
-Để chạy dự án này trên máy tính cá nhân, bạn cần cài đặt:
-- **Node.js & npm:** (Bắt buộc cho Frontend React).
-- **Python:** Phiên bản 3.9 trở lên (Nếu Backend dùng Python).
-- **Git:** Để quản lý mã nguồn.
-- **Docker & Docker Compose:** (Tùy chọn) Nếu muốn chạy qua container.
-- **PostgreSQL:** Cục bộ hoặc sử dụng Cloud DB (Supabase/Aiven).
-
----
-
-## 🚀 Hướng dẫn Cài đặt & Chạy Local
-
-### 1. Clone repository và thiết lập biến môi trường
-
-```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-cd YOUR-REPO-NAME
-```
-
-Tạo file `.env` ở thư mục gốc để chứa các khóa bảo mật:
-```env
-# Database Config
-DATABASE_URL=postgresql://user:password@host:port/dbname
-
-# AI API Config
-HUGGINGFACE_API_KEY=your_api_key_here
-```
-
-### 2. Khởi chạy Backend
-
-Mở một Terminal mới và thực thi tuần tự:
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-📍 *API Server chạy tại: `http://localhost:8000`*
-
-### 3. Khởi chạy Frontend (React.js)
-
-Mở Terminal thứ 2 và thực thi tuần tự:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-📍 *Giao diện Web truy cập tại: `http://localhost:5173` (nếu dùng Vite) hoặc `http://localhost:3000` (nếu dùng CRA)*
-
----
-
-## 🐳 Triển khai với Docker
-
-Nếu bạn đã cài đặt Docker, bạn có thể build và chạy toàn bộ hệ thống bằng 2 lệnh duy nhất:
-
-```bash
-# 1. Build Docker Image
-docker build -t sentiment-ai-app .
-
-# 2. Chạy Container với các cổng tương ứng và load biến môi trường
-docker run -d -p 8000:8000 -p 3000:3000 --env-file .env --name sentiment_container sentiment-ai-app
-```
-
----
-
-## 🔄 Quy trình CI/CD
-
-Dự án này sử dụng **GitHub Actions** để tự động hóa toàn bộ vòng đời phân phối phần mềm:
-
-1. **Push/Merge vào nhánh `main`**: Kích hoạt Pipeline tự động.
-2. **Test & Lint**: Kiểm tra lỗi cú pháp.
-3. **Build & Push Docker Image**: Đóng gói mã nguồn thành Docker Image và đẩy lên **Docker Hub**.
-4. **Deploy**: Tự động kéo Image mới nhất từ Docker Hub về Server (Koyeb/Render) và khởi động lại dịch vụ thông qua Public HTTPS.
-
----
-
-## 👥 Thành viên Nhóm & Trách nhiệm
-
-| STT | Vị trí | Người phụ trách | Mô tả công việc (Deliverables) |
-|:---:|:---|:---|:---|
-| 1 | **AI & Backend Core** | `DuongP` | Viết API, tích hợp LLM/Hugging Face xử lý phân tích cảm xúc. |
-| 2 | **PostgreSQL & Data** | `Huyen Anh` | Thiết kế schema DB, viết query SQL, cấu hình Cloud Database. |
-| 3 | **DevOps (Docker)** | `Duc Duong` | Viết Dockerfile tối ưu, xử lý môi trường, push image lên Docker Hub. |
-| 4 | **CI/CD & Deployment**| `Tu Vu` | Viết Github Actions workflow, cấu hình server triển khai HTTPS public. |
-| 5 | **Frontend & Git Master** | `DuongVu` | Code React UI, quản lý Git/Merge conflict, viết hệ thống tài liệu. |
-
----
-*Dự án môn học Nền tảng phát triển Trí Tuệ Nhân Tạo* 
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
