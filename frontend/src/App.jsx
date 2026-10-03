@@ -31,7 +31,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-950 via-emerald-900 to-green-950 p-8 flex flex-col justify-center relative overflow-hidden">{/* Đổi từ bg-white/10 sang bg-black/40 (Kính râm đen) và giảm viền sáng xuống border-white/10 */}
+    <div className="min-h-screen bg-gradient-to-br from-teal-950 via-emerald-900 to-green-950 p-8 flex flex-col justify-center relative overflow-hidden">
       <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        {/* Tiêu đề dùng font Serif */}
         <h1 className="text-5xl font-serif text-center mb-8 text-yellow-100 drop-shadow-lg">
           Sentiment Analysis
