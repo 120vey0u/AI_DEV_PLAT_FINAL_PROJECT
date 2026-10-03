@@ -133,10 +133,9 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
-          # Xóa thư mục .vercel cũ nếu có
-          rm -rf .vercel
+          mkdir -p .vercel
           
-          # Sử dụng --project thay cho --projectId và truyền --scope
-          npx vercel --prod --token=$VERCEL_TOKEN --project=$VERCEL_PROJECT_ID --scope=$VERCEL_ORG_ID --yes
+          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"\"}" > .vercel/project.json
+          
+          npx vercel --prod --token=$VERCEL_TOKEN --yes
