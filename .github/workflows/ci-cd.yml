@@ -133,11 +133,11 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: "usr_zIAaqVgZ2w8hgm6UIS7PBLQE"
         run: |
-          FETCH_ORG_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | jq -r '.user.id')
-          
+          # 1. Tạo thư mục cấu hình chuẩn cho Vercel CLI
           mkdir -p .vercel
-          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$FETCH_ORG_ID\"}" > .vercel/project.json
+          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
           
-          export VERCEL_ORG_ID=$FETCH_ORG_ID
+          # 2. Deploy trực tiếp
           npx vercel --prod --token=$VERCEL_TOKEN --yes
