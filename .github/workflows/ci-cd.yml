@@ -134,9 +134,10 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          USER_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | jq -r '.user.id')
+          FETCH_ORG_ID=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user | jq -r '.user.id')
           
           mkdir -p .vercel
-          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$USER_ID\"}" > .vercel/project.json
+          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$FETCH_ORG_ID\"}" > .vercel/project.json
           
+          export VERCEL_ORG_ID=$FETCH_ORG_ID
           npx vercel --prod --token=$VERCEL_TOKEN --yes
