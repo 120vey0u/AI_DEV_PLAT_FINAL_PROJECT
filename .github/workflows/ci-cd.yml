@@ -125,6 +125,23 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+      - name: Fix Vercel Root Directory Config
+        working-directory: ${{ github.workspace }}/frontend
+        run: |
+          if [ -f .vercel/project.json ]; then
+            echo "--> Đang tự động sửa file project.json để xóa bỏ rootDirectory bị lệch..."
+            # Dùng node nhỏ để sửa file json an toàn tuyệt đối
+            node -e '
+              const fs = require("fs");
+              const file = ".vercel/project.json";
+              const config = JSON.parse(fs.readFileSync(file, "utf8"));
+              config.settings = config.settings || {};
+              config.settings.rootDirectory = "";
+              fs.writeFileSync(file, JSON.stringify(config, null, 2));
+            '
+            echo "--> Đã sửa xong project.json!"
+          fi
+
       - name: Deploy Project to Vercel
         working-directory: ${{ github.workspace }}/frontend
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
