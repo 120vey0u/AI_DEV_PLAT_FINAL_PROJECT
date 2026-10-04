@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ -f database/schema.sql ]; then
             echo "--> Đang kiểm tra cú pháp file schema.sql..."
-            PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f database/schema.sql || echo "⚠️ Lỗi schema SQL nhưng tạm thời bỏ qua để không chặn CI."
+            PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f database/schema.sql || echo "⚠️️ Lỗi schema SQL nhưng tạm thời bỏ qua để không chặn CI."
             echo "--> Kiểm tra xong schema.sql!"
           else
             echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
@@ -71,41 +71,36 @@ jobs:
           else
             echo "--> Thư mục frontend chưa có hoặc file package.json bị rỗng, tự động bỏ qua check Frontend."
           fi
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: test-all
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+  
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+  
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
 
-  # =========================================================================
-  # TẠM THỜI COMMENT PHẦN DOCKER (MỞ LẠI KHI CẦN)
-  # =========================================================================
-  # build-and-push:
-  #   name: Build & Push Docker Image
-  #   needs: test-all
-  #   runs-on: ubuntu-latest
-  #   continue-on-error: true
-  #   steps:
-  #     - name: Checkout Source Code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Log in to Docker Hub
-  #       uses: docker/login-action@v3
-  #       with:
-  #         username: ${{ secrets.DOCKER_USERNAME }}
-  #         password: ${{ secrets.DOCKER_PASSWORD }}
-  #
-  #     - name: Build and Push Docker Image
-  #       uses: docker/build-push-action@v5
-  #       with:
-  #         context: .
-  #         file: ./Dockerfile
-  #         push: true
-  #         tags: |
-  #           ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
-  #           ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
-  # =========================================================================
 
   deploy-frontend:
     name: Deploy Frontend to Vercel
-    needs: [test-all] # Đã chuyển phụ thuộc trực tiếp về test-all
+    needs: test-all
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
