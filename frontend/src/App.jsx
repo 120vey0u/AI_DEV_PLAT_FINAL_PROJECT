@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import PrimaryButton from './components/PrimaryButton';
 
 function App() {
   const [text, setText] = useState("");
@@ -33,7 +34,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-950 via-emerald-900 to-green-950 p-8 flex flex-col justify-center relative overflow-hidden">
       <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        {/* Tiêu đề dùng font Serif */}
-        <h1 className="text-5xl font-serif text-center mb-8 text-yellow-100 drop-shadow-lg">
+        <h1 className="text-5xl font-serif text-center mb-8 bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-500 bg-clip-text text-transparent animate-pulse [animation-duration:6s] drop-shadow-lg">
           Sentiment Analysis
         </h1>
 
@@ -46,14 +47,10 @@ function App() {
           onChange={(e) => setText(e.target.value)}
         />
 
-        {/* Nút bấm thiền tịnh */}
-        <button 
-          onClick={handleAnalyze} 
-          disabled={loading}
-          className="w-full mt-6 py-3 rounded-xl bg-green-800/60 hover:bg-green-700/80 text-green-100 font-bold uppercase tracking-widest border border-green-500/30 transition-all active:scale-95 disabled:opacity-50"
-        >
+        {/* Nút bấm thiền tịnh (CSS đã được giấu gọn gàng sang file khác) */}
+        <PrimaryButton onClick={handleAnalyze} disabled={loading}>
           {loading ? "Loading" : "Analyze"}
-        </button>
+        </PrimaryButton>
 
         {/* Khu vực kết quả hiện ra sau khi phân tích */}
         {result && !loading && (
