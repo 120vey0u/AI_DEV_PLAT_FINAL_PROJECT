@@ -114,30 +114,37 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
             ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
 
-  deploy-frontend:
-    name: Deploy Frontend to Vercel
-    needs: [test-all, build-and-push]
+  deploy:
     runs-on: ubuntu-latest
-    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && (needs.test-all.result == 'success')
     steps:
-      - name: Checkout Source Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Deploy to Vercel CLI
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
         working-directory: ./frontend
+        run: vercel pull --environment=production --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: "usr_zIAaqVgZ2w8hgm6UIS7PBLQE"
-        run: |
-          # 1. Tạo thư mục cấu hình chuẩn cho Vercel CLI
-          mkdir -p .vercel
-          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-          
-          # 2. Deploy trực tiếp
-          npx vercel --prod --token=$VERCEL_TOKEN --yes
+
+      - name: Build Project with Vercel
+        working-directory: ./frontend
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy Project to Vercel
+        working-directory: ./frontend
+        run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
