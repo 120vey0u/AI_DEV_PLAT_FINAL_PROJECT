@@ -99,8 +99,10 @@ jobs:
 
   deploy-frontend:
     name: Deploy Frontend to Vercel
+    needs: [build-and-push] # Tên job docker của bạn
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # Thêm always() để bỏ qua lỗi/thất bại của job Docker trước đó
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
