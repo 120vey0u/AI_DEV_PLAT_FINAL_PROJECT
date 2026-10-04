@@ -114,18 +114,19 @@ jobs:
 
     - name: Install Frontend Dependencies
       working-directory: ./frontend
+      run: npm ci
+
+    - name: Check Frontend
+      working-directory: ./frontend
       run: |
-        npm ci
-        echo "=== Check Vite ==="
+        pwd
         npm ls vite
-        ls -la node_modules/.bin/vite
         ./node_modules/.bin/vite --version
 
     - name: Install Vercel CLI
       run: npm install --global vercel@latest
 
     - name: Pull Vercel Environment Information
-      working-directory: ./frontend
       run: |
         vercel pull \
           --environment=production \
@@ -136,26 +137,21 @@ jobs:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     - name: Build Project with Vercel
-      working-directory: ./frontend
       run: |
-        echo "=== Node ==="
-        node --version
-
-        echo "=== NPM ==="
-        npm --version
-
-        echo "=== Vite ==="
-        ./node_modules/.bin/vite --version
-
-        echo "=== Vercel Build ==="
-        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        vercel build \
+          --prod \
+          --token=${{ secrets.VERCEL_TOKEN }}
       env:
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     - name: Deploy Project to Vercel
-      working-directory: ./frontend
-      run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+      run: |
+        vercel deploy \
+          --prod \
+          --prebuilt \
+          --token=${{ secrets.VERCEL_TOKEN }}
       env:
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
