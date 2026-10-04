@@ -97,12 +97,12 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
 
   deploy-frontend:
-  name: Deploy Frontend to Vercel
-  needs: test-all
-  runs-on: ubuntu-latest
-  continue-on-error: true
+    name: Deploy Frontend to Vercel
+    needs: test-all
+    runs-on: ubuntu-latest
+    continue-on-error: true
 
-  steps:
+    steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
