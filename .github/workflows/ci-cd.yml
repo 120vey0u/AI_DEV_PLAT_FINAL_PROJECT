@@ -110,7 +110,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies & Build Vite App
-        working-directory: ${{ github.workspace }}/frontend
+        working-directory: /work/AI_DEV_PLAT_FINAL_PROJECT/frontend
         run: |
           npm install
           npm run build
@@ -119,14 +119,14 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        working-directory: ${{ github.workspace }}/frontend
+        working-directory: /work/AI_DEV_PLAT_FINAL_PROJECT/frontend
         run: vercel pull --environment=production --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy Project to Vercel
-        working-directory: ${{ github.workspace }}/frontend
+        working-directory: /work/AI_DEV_PLAT_FINAL_PROJECT/frontend
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
