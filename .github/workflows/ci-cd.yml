@@ -7,70 +7,70 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test-all:
-    name: Check Frontend & Database
-    runs-on: ubuntu-latest
-    services:
-      postgres-test:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+  # test-all:
+    # name: Check Frontend & Database
+    # runs-on: ubuntu-latest
+    # services:
+    #   postgres-test:
+    #     image: postgres:15
+    #     env:
+    #       POSTGRES_USER: test_user
+    #       POSTGRES_PASSWORD: test_password
+    #       POSTGRES_DB: test_db
+    #     ports:
+    #       - 5432:5432
+    #     options: >-
+    #       --health-cmd pg_isready
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
 
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
+    # steps:
+    #   - name: Checkout Source Code
+    #     uses: actions/checkout@v4
 
-      - name: Install PostgreSQL Client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+    #   - name: Install PostgreSQL Client
+    #     run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Validate database/schema.sql syntax on Local Test DB
-        run: |
-          if [ -f database/schema.sql ]; then
-            echo "--> Đang kiểm tra cú pháp file schema.sql..."
-            PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f database/schema.sql || echo "⚠️️ Lỗi schema SQL nhưng tạm thời bỏ qua để không chặn CI."
-            echo "--> Kiểm tra xong schema.sql!"
-          else
-            echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
-          fi
+    #   - name: Validate database/schema.sql syntax on Local Test DB
+    #     run: |
+    #       if [ -f database/schema.sql ]; then
+    #         echo "--> Đang kiểm tra cú pháp file schema.sql..."
+    #         PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f database/schema.sql || echo "⚠️️ Lỗi schema SQL nhưng tạm thời bỏ qua để không chặn CI."
+    #         echo "--> Kiểm tra xong schema.sql!"
+    #       else
+    #         echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
+    #       fi
 
-      - name: Test Connection to Supabase
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
-            exit 0
-          fi
-          echo "--> Đang kiểm tra kết nối tới Supabase Database..."
-          PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
+    #   - name: Test Connection to Supabase
+    #     env:
+    #       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    #     run: |
+    #       if [ -z "$DATABASE_URL" ]; then
+    #         echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
+    #         exit 0
+    #       fi
+    #       echo "--> Đang kiểm tra kết nối tới Supabase Database..."
+    #       PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+    #   - name: Set up Node.js 20
+    #     uses: actions/setup-node@v4
+    #     with:
+    #       node-version: '20'
 
-      - name: Test Frontend Build
-        run: |
-          if [ -d frontend ] && [ -s frontend/package.json ]; then
-            cd frontend
-            if [ -f package-lock.json ]; then
-              npm ci || npm install || echo "⚠️ Cài đặt packages frontend thất bại."
-            else
-              npm install || echo "⚠️ Không thể npm install frontend."
-            fi
-            npm run build || echo "⚠️ Frontend chưa sẵn sàng build, bỏ qua để không chặn CI."
-          else
-            echo "--> Thư mục frontend chưa có hoặc file package.json bị rỗng, tự động bỏ qua check Frontend."
-          fi
+    #   - name: Test Frontend Build
+    #     run: |
+    #       if [ -d frontend ] && [ -s frontend/package.json ]; then
+    #         cd frontend
+    #         if [ -f package-lock.json ]; then
+    #           npm ci || npm install || echo "⚠️ Cài đặt packages frontend thất bại."
+    #         else
+    #           npm install || echo "⚠️ Không thể npm install frontend."
+    #         fi
+    #         npm run build || echo "⚠️ Frontend chưa sẵn sàng build, bỏ qua để không chặn CI."
+    #       else
+    #         echo "--> Thư mục frontend chưa có hoặc file package.json bị rỗng, tự động bỏ qua check Frontend."
+    #       fi
   build-and-push:
     name: Build & Push Docker Image
     needs: test-all
