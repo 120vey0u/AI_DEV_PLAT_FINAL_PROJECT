@@ -115,10 +115,15 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Bổ sung bước cài đặt dependencies để tạo node_modules chứa 'vite'
+      # CÀI ĐẶT DEPENDENCIES TRỰC TIẾP TRƯỚC KHI BUILD
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci || npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Pull Vercel Environment Information
         working-directory: ./frontend
