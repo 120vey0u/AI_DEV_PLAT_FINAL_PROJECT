@@ -109,9 +109,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
+
+      # Bổ sung bước cài đặt dependencies để tạo node_modules chứa 'vite'
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install
 
       - name: Pull Vercel Environment Information
         working-directory: ./frontend
