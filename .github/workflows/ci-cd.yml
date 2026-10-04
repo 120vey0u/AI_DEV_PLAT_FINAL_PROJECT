@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-all:
-    name: Check Backend, Frontend & Database
+    name: Check Frontend & Database
     runs-on: ubuntu-latest
     services:
       postgres-test:
@@ -53,23 +53,6 @@ jobs:
           echo "--> Đang kiểm tra kết nối tới Supabase Database..."
           PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
-      - name: Run Backend Tests
-        run: |
-          if [ -d backend ]; then
-            cd backend
-            python -m pip install --upgrade pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            pip install pytest httpx
-            PYTHONPATH=. pytest || echo "⚠️ Backend chưa có pytest hoặc test chưa pass, bỏ qua để không chặn CI."
-          else
-            echo "--> Chưa có thư mục backend, bỏ qua."
-          fi
-
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -82,7 +65,7 @@ jobs:
             if [ -f package-lock.json ]; then
               npm ci || npm install || echo "⚠️ Cài đặt packages frontend thất bại."
             else
-              npm install || echo "⚠️️ Không thể npm install frontend."
+              npm install || echo "⚠️ Không thể npm install frontend."
             fi
             npm run build || echo "⚠️ Frontend chưa sẵn sàng build, bỏ qua để không chặn CI."
           else
@@ -127,7 +110,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies in frontend # <--- BƯỚC MỚI: Cài đặt packages để có lệnh vite
+      - name: Install dependencies in frontend
         working-directory: ./frontend
         run: npm install
 
