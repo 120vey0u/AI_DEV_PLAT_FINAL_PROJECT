@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import PrimaryButton from './components/PrimaryButton';
 
 function App() {
   const [text, setText] = useState("");
@@ -13,7 +14,7 @@ function App() {
 
     setTimeout(() => {
       setResult({
-        overall: "Đan xen",
+        overall: "Interwoven",
         highlightedText: [
           { text: "Phong cảnh nơi đây thật sự ", sentiment: "neutral" },
           { text: "thanh tịnh và đẹp đẽ", sentiment: "positive" },
@@ -32,8 +33,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-950 via-emerald-900 to-green-950 p-8 flex flex-col justify-center relative overflow-hidden">
-      <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        {/* Tiêu đề dùng font Serif */}
-        <h1 className="text-5xl font-serif text-center mb-8 text-yellow-100 drop-shadow-lg">
+      <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        
+        {/* Tiêu đề dùng font Serif */}
+        <h1 className="text-5xl font-serif text-center mb-8 bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-500 bg-clip-text text-transparent animate-pulse [animation-duration:6s] drop-shadow-lg">
           Sentiment Analysis
         </h1>
 
@@ -46,14 +48,10 @@ function App() {
           onChange={(e) => setText(e.target.value)}
         />
 
-        {/* Nút bấm thiền tịnh */}
-        <button 
-          onClick={handleAnalyze} 
-          disabled={loading}
-          className="w-full mt-6 py-3 rounded-xl bg-green-800/60 hover:bg-green-700/80 text-green-100 font-bold uppercase tracking-widest border border-green-500/30 transition-all active:scale-95 disabled:opacity-50"
-        >
+        {/* Nút bấm thiền tịnh (CSS đã được giấu gọn gàng sang file khác) */}
+        <PrimaryButton onClick={handleAnalyze} disabled={loading}>
           {loading ? "Loading" : "Analyze"}
-        </button>
+        </PrimaryButton>
 
         {/* Khu vực kết quả hiện ra sau khi phân tích */}
         {result && !loading && (
@@ -62,6 +60,7 @@ function App() {
 
             {/* Box 1: Text Highlighting */}
             <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
+              <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Details of the passage</h3>
 
               <p className="text-lg leading-loose font-light">
                 {/* Lệnh map() để lặp qua từng mảnh chữ */}
@@ -72,12 +71,12 @@ function App() {
 
                   // Nếu là lời khen -> Nền xanh, chữ xanh sáng
                   if (item.sentiment === "positive") {
-                    colorClass = "bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-medium border border-green-500/20";
+                    colorClass = "italic bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-bold border border-green-500/20";
                   }
 
                   // Nếu là lời chê -> Nền đỏ, chữ đỏ sáng
                   if (item.sentiment === "negative") {
-                    colorClass = "bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-md font-medium border border-red-500/20";
+                    colorClass = "italic bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-md font-bold border border-red-500/20";
                   }
 
                   return (
@@ -91,7 +90,7 @@ function App() {
 
             {/* Box 2: Biểu đồ thống kê (Recharts) */}
             <div className="mt-4 h-64 p-4 rounded-xl bg-black/40 border border-white/5">
-              <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Details of every aspect</h3>
+              <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Details of aspects</h3>
 
               <ResponsiveContainer width="100%" height="80%">
                 {/* Đưa mảng result.aspects vào làm dữ liệu */}
@@ -120,6 +119,36 @@ function App() {
 
               </ResponsiveContainer>
             </div>
+
+            {/* Box 3: Câu chốt hạ (Kết luận tổng quan) */}
+            {(() => {
+              // 1. Tinh toan trung binh sentiment
+              const totalScore = result.aspects.reduce((sum, item) => (sum + item.score), 0);
+              const avgScore = totalScore / result.aspects.length;
+              const isPositive = avgScore >= 50;
+
+              // 2. Chot phan ket luan va mau sac
+              const conclusionState = result.overall;
+              const conclusionText = isPositive ? "Câu văn truyền tải những cảm xúc đan xen. Khung cảnh được miêu tả là yên bình và tuyệt đẹp, gợi lên cảm giác tích cực, trong khi tiếng gió ồn ào và đáng sợ lại mang đến cảm xúc tiêu cực. Nhìn chung, sắc thái cảm xúc ở đây có sự cân bằng giữa sự tán thưởng và cảm giác khó chịu." : "Overall, the paragraph is more negative.";
+              
+              // Tam thoi de mau state la mau vang, sau nay doi sau
+              const colorClassState = "italic bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-md font-extrabold border border-yellow-500/20";
+              
+              const colorClassText = isPositive ? "bg-green-500/20 border-green-500/40 text-green-300" : "bg-red-500/20 border-red-500/40 text-red-300";
+
+              // 3. Render giao dien
+              return (  
+                <div className="mt-6 p-4 mx-auto h-fit rounded-xl bg-black/40 border border-white/5">
+                  <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Conclusion: <span className={`${colorClassState}`}>{conclusionState}</span> <span className="italic bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-extrabold border border-green-500/20">
+                      Average Score: {Math.round(avgScore)}/100
+                    </span>
+                  </h3>
+                  <div className={`italic mt-2 p-2 flex text-lg font-medium leading-loose`}>
+                    {conclusionText}
+                  </div>
+                </div>
+              );
+            })()}
 
           </div>
         )}

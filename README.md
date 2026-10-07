@@ -58,7 +58,7 @@ flowchart LR
 ## ⚙️ Yêu cầu Môi trường
 
 Để chạy dự án này trên máy tính cá nhân, bạn cần cài đặt:
-- **Node.js & npm:** (Bắt buộc cho Frontend React).
+- **Node.js & npm:** (Bắt buộc cho Frontend React)..
 - **Python:** Phiên bản 3.9 trở lên (Nếu Backend dùng Python).
 - **Git:** Để quản lý mã nguồn.
 - **Docker & Docker Compose:** (Tùy chọn) Nếu muốn chạy qua container.

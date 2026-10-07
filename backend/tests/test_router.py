@@ -11,13 +11,21 @@ client = TestClient(app)
 def test_analyze_endpoint_success():
     with patch("app.routers.sentiment.process_text") as mock_process:
         mock_process.return_value = {
-            "id": 1, "text": "hello", "label": "positive", "score": 0.95
+            "id": 1,
+            "input_text": "hello",
+            "created_at": "2026-10-06T00:00:00Z",
+            "analysis_data": {
+                "overall": "Tích cực",
+                "overall_comment": "Tốt",
+                "highlightedText": [],
+                "aspects": [],
+            },
         }
 
         response = client.post("/api/v1/analyze", json={"text": "hello"})
 
     assert response.status_code == 200
-    assert response.json()["label"] == "positive"
+    assert response.json()["analysis_data"]["overall"] == "Tích cực"
 
 
 def test_analyze_endpoint_rejects_invalid_input():

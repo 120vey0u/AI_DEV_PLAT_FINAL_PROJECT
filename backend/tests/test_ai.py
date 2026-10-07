@@ -1,26 +1,35 @@
 from unittest.mock import patch, MagicMock
 
-from app.ai.huggingface_client import analyze_sentiment
+from app.ai.gemini_client import analyze_aspects
+
+FAKE_GEMINI_JSON = '{"overall": "Tích cực", "overall_comment": "Tốt", "highlightedText": [], "aspects": []}'
 
 
-def test_analyze_sentiment_returns_label_and_score():
-    fake_result = MagicMock(label="positive", score=0.987654)
-
-    with patch("app.ai.huggingface_client.client.text_classification") as mock_call:
-        mock_call.return_value = [fake_result]
-
-        result = analyze_sentiment("I love this")
-
-    assert result["label"] == "positive"
-    assert result["score"] == 0.9877  # đã làm tròn 4 chữ số trong code thật
+def _fake_response(json_text):
+    fake_resp = MagicMock()
+    fake_resp.raise_for_status.return_value = None
+    fake_resp.json.return_value = {
+        "candidates": [{"content": {"parts": [{"text": json_text}]}}]
+    }
+    return fake_resp
 
 
-def test_analyze_sentiment_raises_runtime_error_on_api_failure():
-    with patch("app.ai.huggingface_client.client.text_classification") as mock_call:
-        mock_call.side_effect = Exception("API down")
+def test_analyze_aspects_returns_parsed_json():
+    with patch("app.ai.gemini_client.httpx.post") as mock_post:
+        mock_post.return_value = _fake_response(FAKE_GEMINI_JSON)
+
+        result = analyze_aspects("test text")
+
+    assert result["overall"] == "Tích cực"
+    assert result["overall_comment"] == "Tốt"
+
+
+def test_analyze_aspects_raises_on_invalid_json():
+    with patch("app.ai.gemini_client.httpx.post") as mock_post:
+        mock_post.return_value = _fake_response("khong phai json")
 
         try:
-            analyze_sentiment("test")
+            analyze_aspects("test")
             assert False, "Phải raise RuntimeError"
         except RuntimeError as e:
-            assert "Hugging Face API error" in str(e)
+            assert "không hợp lệ" in str(e)
