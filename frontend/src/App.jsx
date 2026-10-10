@@ -44,6 +44,10 @@ function App() {
       // Du thanh cong hay that bai cung phai tat cai trang thai loading 
       setLoading(false);
     };
+
+    if (result.aspects.length === 1 && result.aspects[0].score === 50) {
+      result.aspects[0].sentiment === "positive";
+    };
   };
 
   //  const handleAnalyze = () => {
