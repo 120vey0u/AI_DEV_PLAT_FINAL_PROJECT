@@ -46,6 +46,30 @@ function App() {
     };
   };
 
+  //  const handleAnalyze = () => {
+  //   if (!text.trim()) return;
+  //   setLoading(true);
+  //   setResult(null);
+
+  //   setTimeout(() => {
+  //     setResult({
+  //       overall: "Tiêu cực",
+  //       highlightedText: [
+  //         { text: "Phong cảnh nơi đây thật sự ", sentiment: "neutral" },
+  //         { text: "thanh tịnh và đẹp đẽ", sentiment: "positive" },
+  //         { text: ", tuy nhiên tiếng gió rít đôi lúc hơi ", sentiment: "neutral" },
+  //         { text: "ồn ào và đáng sợ", sentiment: "negative" },
+  //         { text: ".", sentiment: "neutral" }
+  //       ],
+  //       aspects: [
+  //         { name: "Cảnh quan", score: 95, sentiment: "positive" },
+  //         { name: "Âm thanh", score: 50, sentiment: "negative" }
+  //       ]
+  //     });
+  //     setLoading(false);
+  //   }, 2000);
+  // };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-950 via-emerald-900 to-green-950 p-8 flex flex-col justify-center relative overflow-hidden">
       <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        
@@ -147,14 +171,15 @@ function App() {
               const conclusionText = result.overall_comment;
               
               // Tam thoi de mau state la mau vang, sau nay doi sau
-              const colorClassState = "italic bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-md font-extrabold border border-yellow-500/20";
+              const colorClassState = (conclusionState === "Đan xen") ? "italic bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-md font-extrabold border border-yellow-500/20" : (conclusionState === "Tích cực" ? "italic bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-extrabold border border-green-500/20" : "italic bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-md font-extrabold border border-red-500/20");
               
-              const colorClassText = isPositive ? "bg-green-500/20 border-green-500/40 text-green-300" : "bg-red-500/20 border-red-500/40 text-red-300";
+              const colorAverageScore = isPositive ? "italic bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-extrabold border border-green-500/20" : "italic bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded-md font-extrabold border border-red-500/20";
 
               // 3. Render giao dien
               return (  
                 <div className="mt-6 p-4 mx-auto h-fit rounded-xl bg-black/40 border border-white/5">
-                  <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Conclusion: <span className={`${colorClassState}`}>{conclusionState}</span> <span className="italic bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-md font-extrabold border border-green-500/20">
+                  <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">
+                    Conclusion: <span className={`${colorClassState}`}>{conclusionState}</span> <span className={`${colorAverageScore}`}>
                       Average Score: {Math.round(avgScore)}/100
                     </span>
                   </h3>
