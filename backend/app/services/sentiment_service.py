@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from app.ai.huggingface_client import analyze_sentiment
 from app.database import crud
 

@@ -7,28 +7,43 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!text.trim()) return;
     setLoading(true);
     setResult(null);
 
-    setTimeout(() => {
-      setResult({
-        overall: "Interwoven",
-        highlightedText: [
-          { text: "Phong cảnh nơi đây thật sự ", sentiment: "neutral" },
-          { text: "thanh tịnh và đẹp đẽ", sentiment: "positive" },
-          { text: ", tuy nhiên tiếng gió rít đôi lúc hơi ", sentiment: "neutral" },
-          { text: "ồn ào và đáng sợ", sentiment: "negative" },
-          { text: ".", sentiment: "neutral" }
-        ],
-        aspects: [
-          { name: "Cảnh quan", score: 95, sentiment: "positive" },
-          { name: "Âm thanh", score: 50, sentiment: "negative" }
-        ]
+    try {
+      // 1. Lay Link API tu file .env
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+      // 2. Bắn yeu cau (POST) mang theo doan van ban sang Backend
+      const response = await fetch(`${apiUrl}/api/v1/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: text })
       });
+
+      // 3. Neu Backend bao loi (vi du sap server, loi 500, ...)
+      if (!response.ok) {
+        throw new Error("Loi tu phia Server Backend");
+      }
+
+      // 4. Lay cuc JSON Backend tra ve
+      const data = await response.json();
+
+      // 5. Nap du lieu vao UI
+      setResult(data.analysis_data);
+
+    } catch (error) {
+      console.error("Loi", error);
+      alert("Phan tich that bai. Co the do loi mang hoac CORS. F12 Len de xem loi.")
+
+    } finally {
+      // Du thanh cong hay that bai cung phai tat cai trang thai loading 
       setLoading(false);
-    }, 2000);
+    };
   };
 
   return (
@@ -62,7 +77,7 @@ function App() {
             <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
               <h3 className="text-white/40 text-xs uppercase tracking-widest mb-4">Details of the passage</h3>
 
-              <p className="text-lg leading-loose font-light">
+              <p className="text-lg leading-loose">
                 {/* Lệnh map() để lặp qua từng mảnh chữ */}
                 {result.highlightedText.map((item, index) => {
 
@@ -129,7 +144,7 @@ function App() {
 
               // 2. Chot phan ket luan va mau sac
               const conclusionState = result.overall;
-              const conclusionText = isPositive ? "Câu văn truyền tải những cảm xúc đan xen. Khung cảnh được miêu tả là yên bình và tuyệt đẹp, gợi lên cảm giác tích cực, trong khi tiếng gió ồn ào và đáng sợ lại mang đến cảm xúc tiêu cực. Nhìn chung, sắc thái cảm xúc ở đây có sự cân bằng giữa sự tán thưởng và cảm giác khó chịu." : "Overall, the paragraph is more negative.";
+              const conclusionText = result.overall_comment;
               
               // Tam thoi de mau state la mau vang, sau nay doi sau
               const colorClassState = "italic bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-md font-extrabold border border-yellow-500/20";
