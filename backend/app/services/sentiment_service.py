@@ -1,10 +1,5 @@
 from sqlalchemy.orm import Session
-<<<<<<< HEAD
-from app.ai.huggingface_client import analyze_sentiment
-=======
-
 from app.ai.gemini_client import analyze_aspects
->>>>>>> c2e91e31c7c9260c66836d7204f61c33b539f3cd
 from app.database import crud
 
 
