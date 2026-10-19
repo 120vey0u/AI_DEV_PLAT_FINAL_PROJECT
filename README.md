@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-blue.svg)](#)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](#)
-[![Backend](https://img.shields.io/badge/API-FastAPI%20/%20Node.js-009688.svg)](#)
+[![Backend](https://img.shields.io/badge/API-FastAPI-009688.svg)](#)
 [![Frontend](https://img.shields.io/badge/UI-React-61DAFB.svg)](#)
 [![Database](https://img.shields.io/badge/DB-PostgreSQL-336791.svg)](#)
 
@@ -37,18 +37,20 @@ flowchart LR
 
 ```text
 .
-├── frontend/                 # Giao diện người dùng (React.js)
+├── frontend/                 # Giao diện người dùng (React.js, Vite, TailwindCSS)
 │   ├── src/                  # Mã nguồn React (App.jsx, components/)
 │   ├── public/               # Tài nguyên tĩnh
 │   └── package.json          # Dependencies cho frontend
-├── backend/                  # API Server (FastAPI / Node.js)
+├── backend/                  # API Server (FastAPI)
 │   ├── main.py               # Logic xử lý API 
 │   └── requirements.txt      # Dependencies cho backend
 ├── database/                 # Lưu trữ Database Scripts
 │   └── schema.sql            # Script khởi tạo bảng PostgreSQL
 ├── .github/workflows/        # Cấu hình CI/CD
-│   └── ci-cd.yml            # Pipeline GitHub Actions
-├── Dockerfile                # File đóng gói image cho toàn bộ ứng dụng
+│   └── ci-cd.yml             # Pipeline GitHub Actions
+├── Dockerfile                # File đóng gói image cho Backend
+├── docker-compose.yml        # Chạy Backend bằng Docker Compose
+├── vercel.json               # Cấu hình deploy Frontend lên Vercel
 ├── .gitignore                # Danh sách file ẩn/bỏ qua khi commit Git
 └── README.md                 # Tài liệu dự án
 ```
@@ -58,8 +60,8 @@ flowchart LR
 ## ⚙️ Yêu cầu Môi trường
 
 Để chạy dự án này trên máy tính cá nhân, bạn cần cài đặt:
-- **Node.js & npm:** (Bắt buộc cho Frontend React)..
-- **Python:** Phiên bản 3.9 trở lên (Nếu Backend dùng Python).
+- **Node.js & npm:** Phiên bản 20 trở lên (Bắt buộc cho Frontend React).
+- **Python:** Phiên bản 3.11 trở lên (Bắt buộc cho Backend FastAPI).
 - **Git:** Để quản lý mã nguồn.
 - **Docker & Docker Compose:** (Tùy chọn) Nếu muốn chạy qua container.
 - **PostgreSQL:** Cục bộ hoặc sử dụng Cloud DB (Supabase/Aiven).
@@ -110,15 +112,24 @@ npm run dev
 
 ## 🐳 Triển khai với Docker
 
-Nếu bạn đã cài đặt Docker, bạn có thể build và chạy toàn bộ hệ thống bằng 2 lệnh duy nhất:
+Nếu bạn đã cài đặt Docker, bạn có thể chạy dịch vụ Backend cực kỳ đơn giản. Dockerfile và cấu hình Docker Compose trong dự án hiện tại được thiết lập để build và chạy Backend.
+
+Bạn có thể chạy bằng Docker CLI thuần:
 
 ```bash
 # 1. Build Docker Image
 docker build -t sentiment-ai-app .
 
-# 2. Chạy Container với các cổng tương ứng và load biến môi trường
-docker run -d -p 8000:8000 -p 3000:3000 --env-file .env --name sentiment_container sentiment-ai-app
+# 2. Chạy Container và load biến môi trường
+docker run -d -p 8000:8000 --env-file .env --name sentiment_container sentiment-ai-app
 ```
+
+Hoặc cách nhanh nhất là sử dụng **Docker Compose**:
+
+```bash
+docker-compose up -d
+```
+📍 *Backend API Server chạy tại: `http://localhost:8000`*
 
 ---
 
@@ -127,9 +138,9 @@ docker run -d -p 8000:8000 -p 3000:3000 --env-file .env --name sentiment_contain
 Dự án này sử dụng **GitHub Actions** để tự động hóa toàn bộ vòng đời phân phối phần mềm:
 
 1. **Push/Merge vào nhánh `main`**: Kích hoạt Pipeline tự động.
-2. **Test & Lint**: Kiểm tra lỗi cú pháp.
-3. **Build & Push Docker Image**: Đóng gói mã nguồn thành Docker Image và đẩy lên **Docker Hub**.
-4. **Deploy**: Tự động kéo Image mới nhất từ Docker Hub về Server (Koyeb/Render) và khởi động lại dịch vụ thông qua Public HTTPS.
+2. **Test & Lint**: Kiểm tra cấu hình database trên test db, kiểm tra kết nối Supabase và test frontend build.
+3. **Build & Push Docker Image**: Đóng gói mã nguồn Backend thành Docker Image và đẩy lên **Docker Hub**.
+4. **Deploy Frontend**: Tự động deploy giao diện React lên nền tảng **Vercel**.
 
 ---
 
