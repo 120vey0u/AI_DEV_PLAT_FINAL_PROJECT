@@ -93,8 +93,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
-            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/final_project:latest
+            ${{ secrets.DOCKER_USERNAME }}/final_project:${{ github.sha }}
 
   deploy-frontend:
     name: Deploy Frontend to Vercel
