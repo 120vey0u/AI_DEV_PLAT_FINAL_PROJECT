@@ -45,9 +45,9 @@ function App() {
       setLoading(false);
     };
 
-    if (result.aspects.length === 1 && result.aspects[0].score === 50) {
-      result.aspects[0].sentiment === "positive";
-    };
+    // if (result.aspects.length === 1 && result.aspects[0].score === 50) {
+    //   result.aspects[0].sentiment === "positive";
+    // };
   };
 
   //  const handleAnalyze = () => {
@@ -79,7 +79,7 @@ function App() {
       <div className="max-w-2xl mx-auto p-10 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/25 shadow-2xl">        
         {/* Tiêu đề dùng font Serif */}
         <h1 className="text-5xl font-serif text-center mb-8 bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-500 bg-clip-text text-transparent animate-pulse [animation-duration:6s] drop-shadow-lg">
-          Sentiment Analysis
+          Sentiment Analysisssssssssssssssssss
         </h1>
 
         {/* Ô nhập liệu được làm tối màu, có hiệu ứng viền sáng lên khi bấm vào */}
