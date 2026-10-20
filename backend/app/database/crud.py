@@ -23,3 +23,11 @@ def list_analyses(db: Session, limit: int = 20, offset: int = 0) -> list[Sentime
         .offset(offset)
         .all()
     )
+
+def delete_analysis(db: Session, analysis_id: int) -> bool:
+    row = db.query(SentimentHistory).filter(SentimentHistory.id == analysis_id).first()
+    if row is None:
+        return False
+    db.delete(row)
+    db.commit()
+    return True

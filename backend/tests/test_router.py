@@ -39,3 +39,28 @@ def test_health_check():
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+def test_get_history_list():
+    with patch("app.routers.sentiment.crud.list_analyses") as mock_list:
+        mock_list.return_value = []
+        response = client.get("/api/v1/history")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_history_item_not_found():
+    with patch("app.routers.sentiment.crud.get_analysis") as mock_get:
+        mock_get.return_value = None
+        response = client.get("/api/v1/history/999")
+
+    assert response.status_code == 404
+
+
+def test_delete_history_item_success():
+    with patch("app.routers.sentiment.crud.delete_analysis") as mock_delete:
+        mock_delete.return_value = True
+        response = client.delete("/api/v1/history/1")
+
+    assert response.status_code == 200
+    assert "Đã xoá" in response.json()["message"]
