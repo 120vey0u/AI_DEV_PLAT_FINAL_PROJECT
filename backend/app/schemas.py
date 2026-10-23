@@ -29,3 +29,6 @@ class AnalyzeResponse(BaseModel):
     input_text: str
     created_at: datetime
     analysis_data: AnalysisData
+
+class DeleteResponse(BaseModel):
+    message: str
