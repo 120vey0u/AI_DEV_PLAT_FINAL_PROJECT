@@ -16,7 +16,7 @@ def analyze_text(body: AnalyzeRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/history", response_model=list[AnalyzeResponse])
-def get_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db)):
+def get_history(limit: int = 100000000000000000, offset: int = 0, db: Session = Depends(get_db)):
     rows = crud.list_analyses(db, limit=limit, offset=offset)
     return [
         AnalyzeResponse(

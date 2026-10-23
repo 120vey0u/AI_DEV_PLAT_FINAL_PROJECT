@@ -15,7 +15,7 @@ def get_analysis(db: Session, analysis_id: int) -> SentimentHistory | None:
     return db.query(SentimentHistory).filter(SentimentHistory.id == analysis_id).first()
 
 
-def list_analyses(db: Session, limit: int = 20, offset: int = 0) -> list[SentimentHistory]:
+def list_analyses(db: Session, limit: int = 100 , offset: int = 0) -> list[SentimentHistory]:
     return (
         db.query(SentimentHistory)
         .order_by(SentimentHistory.id.desc())
