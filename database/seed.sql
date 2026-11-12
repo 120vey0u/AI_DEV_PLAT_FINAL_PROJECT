@@ -1,22 +1,135 @@
--- Dữ liệu mẫu (Data Seed) cho bảng sentiment_history
-INSERT INTO sentiment_history (user_id, input_text, sentiment_result) VALUES
-('user_001', 'Sản phẩm dùng rất tuyệt vời, giao hàng nhanh chóng!', 'Positive'),
-('user_002', 'Dịch vụ chăm sóc khách hàng quá tệ, thất vọng.', 'Negative'),
-('user_003', 'Ứng dụng tạm ổn, cần cải thiện thêm giao diện.', 'Neutral'),
-('user_004', 'Chất lượng quá kém, không như quảng cáo.', 'Negative'),
-('user_005', 'Rất hài lòng về cách phục vụ của shop.', 'Positive'),
-('user_006', 'Bình thường, không có gì đặc sắc lắm.', 'Neutral'),
-('user_007', 'Tuyệt đỉnh! Sẽ ủng hộ shop dài lâu.', 'Positive'),
-('user_008', 'Giao hàng chậm trễ, hộp bị móp méo.', 'Negative'),
-('user_009', 'Tạm được trong tầm giá này.', 'Neutral'),
-('user_010', 'Sản phẩm lỗi ngay lần đầu sử dụng, quá chán.', 'Negative'),
-('user_011', 'Đóng gói cẩn thận, hàng chuẩn chính hãng.', 'Positive'),
-('user_012', 'Nhân viên hỗ trợ nhiệt tình, giải đáp nhanh.', 'Positive'),
-('user_013', 'Không gian quán hơi ồn ào nhưng đồ uống ngon.', 'Neutral'),
-('user_014', 'Quá thất vọng với chất lượng dịch vụ lần này.', 'Negative'),
-('user_015', 'Tuyệt vời ông mặt trời, rất đáng tiền!', 'Positive'),
-('user_016', 'Màu sắc thực tế hơi khác so với hình ảnh.', 'Neutral'),
-('user_017', 'Hàng dùng cực kỳ mượt mà, rất ưng ý.', 'Positive'),
-('user_018', 'Thái độ nhân viên lúc giao hàng kém quá.', 'Negative'),
-('user_019', 'Chất lượng tương xứng với giá tiền.', 'Neutral'),
-('user_020', 'Tuyệt hảo! Không có điểm gì để chê.', 'Positive');
+INSERT INTO sentiment_history (input_text, analysis_data) VALUES 
+(
+    'Phong cảnh nơi đây thật sự thanh tịnh và đẹp đẽ, tuy nhiên tiếng gió rít đôi lúc hơi ồn ào và đáng sợ.', 
+    '{
+      "overall": "Đan xen",
+      "highlightedText": [
+        {
+          "text": "Phong cảnh nơi đây thật sự ",
+          "sentiment": "neutral"
+        },
+        {
+          "text": "thanh tịnh và đẹp đẽ",
+          "sentiment": "positive"
+        },
+        {
+          "text": ", tuy nhiên tiếng gió rít đôi lúc hơi ",
+          "sentiment": "neutral"
+        },
+        {
+          "text": "ồn ào và đáng sợ",
+          "sentiment": "negative"
+        },
+        {
+          "text": ".",
+          "sentiment": "neutral"
+        }
+      ],
+      "aspects": [
+        {
+          "name": "Cảnh quan",
+          "score": 95,
+          "sentiment": "positive"
+        },
+        {
+          "name": "Âm thanh",
+          "score": 50,
+          "sentiment": "negative"
+        }
+      ]
+    }'::jsonb
+),
+(
+    'Sản phẩm dùng rất tuyệt vời, giao hàng nhanh chóng!', 
+    '{
+      "overall": "Tích cực",
+      "highlightedText": [
+        {"text": "Sản phẩm dùng rất tuyệt vời", "sentiment": "positive"},
+        {"text": ", giao hàng nhanh chóng!", "sentiment": "positive"}
+      ],
+      "aspects": [
+        {"name": "Chất lượng", "score": 95, "sentiment": "positive"},
+        {"name": "Giao hàng", "score": 90, "sentiment": "positive"}
+      ]
+    }'::jsonb
+),
+(
+    'Dịch vụ chăm sóc khách hàng quá tệ, thất vọng toàn tập.', 
+    '{
+      "overall": "Tiêu cực",
+      "highlightedText": [
+        {"text": "Dịch vụ chăm sóc khách hàng quá tệ", "sentiment": "negative"},
+        {"text": ", thất vọng toàn tập.", "sentiment": "negative"}
+      ],
+      "aspects": [
+        {"name": "CSKH", "score": 10, "sentiment": "negative"}
+      ]
+    }'::jsonb
+),
+(
+    'Ứng dụng tạm ổn, cần cải thiện thêm giao diện cho bắt mắt hơn.', 
+    '{
+      "overall": "Trung lập",
+      "highlightedText": [
+        {"text": "Ứng dụng tạm ổn", "sentiment": "neutral"},
+        {"text": ", cần cải thiện thêm giao diện cho bắt mắt hơn.", "sentiment": "neutral"}
+      ],
+      "aspects": [
+        {"name": "Giao diện", "score": 50, "sentiment": "neutral"}
+      ]
+    }'::jsonb
+),
+(
+    'Chất lượng âm thanh nghe rất hay và ấm, tuy nhiên pin lại hơi nhanh hết.', 
+    '{
+      "overall": "Đan xen",
+      "highlightedText": [
+        {"text": "Chất lượng âm thanh nghe rất hay và ấm", "sentiment": "positive"},
+        {"text": ", tuy nhiên pin lại hơi nhanh hết.", "sentiment": "negative"}
+      ],
+      "aspects": [
+        {"name": "Âm thanh", "score": 88, "sentiment": "positive"},
+        {"name": "Pin", "score": 40, "sentiment": "negative"}
+      ]
+    }'::jsonb
+),
+(
+    'Món ăn ngon, giá rẻ bất ngờ nhưng không gian quán hơi chật chội.', 
+    '{
+      "overall": "Đan xen",
+      "highlightedText": [
+        {"text": "Món ăn ngon, giá rẻ bất ngờ", "sentiment": "positive"},
+        {"text": " nhưng không gian quán hơi chật chội.", "sentiment": "negative"}
+      ],
+      "aspects": [
+        {"name": "Món ăn & Giá", "score": 92, "sentiment": "positive"},
+        {"name": "Không gian", "score": 35, "sentiment": "negative"}
+      ]
+    }'::jsonb
+),
+(
+    'Nhân viên thân thiện, cửa hàng sạch sẽ, mọi thứ đều rất hoàn hảo.', 
+    '{
+      "overall": "Tích cực",
+      "highlightedText": [
+        {"text": "Nhân viên thân thiện, cửa hàng sạch sẽ, mọi thứ đều rất hoàn hảo.", "sentiment": "positive"}
+      ],
+      "aspects": [
+        {"name": "Nhân viên", "score": 98, "sentiment": "positive"},
+        {"name": "Vệ sinh", "score": 95, "sentiment": "positive"}
+      ]
+    }'::jsonb
+),
+(
+    'Đóng gói hàng hóa cực kỳ cẩu thả khiến sản phẩm bị móp méo bên trong.', 
+    '{
+      "overall": "Tiêu cực",
+      "highlightedText": [
+        {"text": "Đóng gói hàng hóa cực kỳ cẩu thả khiến sản phẩm bị móp méo bên trong.", "sentiment": "negative"}
+      ],
+      "aspects": [
+        {"name": "Đóng gói", "score": 15, "sentiment": "negative"}
+      ]
+    }'::jsonb
+);
+
