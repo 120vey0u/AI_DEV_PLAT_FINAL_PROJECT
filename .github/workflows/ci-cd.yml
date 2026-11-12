@@ -3,20 +3,22 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
 
 permissions:
   contents: read
 
-# =========================================================
-# JOB 1: TEST ALL
-# Chạy trên cả Pull Request và Push vào main
-# =========================================================
 jobs:
 
+  # =====================================================
+  # JOB 1: TEST ALL
+  # Chạy khi tạo/cập nhật PR và khi push vào main
+  # =====================================================
   test-all:
     name: "1. Test Backend, Database & Frontend"
     runs-on: ubuntu-latest
@@ -29,15 +31,12 @@ jobs:
     services:
       postgres-test:
         image: postgres:15
-
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
           POSTGRES_DB: test_db
-
         ports:
           - 5432:5432
-
         options: >-
           --health-cmd "pg_isready -U test_user -d test_db"
           --health-interval 10s
@@ -46,88 +45,61 @@ jobs:
 
     steps:
 
-      # ---------------------------------------------------
-      # 1. CHECKOUT SOURCE CODE
-      # ---------------------------------------------------
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------
-      # 2. DEBUG WORKFLOW EVENT
-      # ---------------------------------------------------
-      - name: Display Workflow Information
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          REF: ${{ github.ref }}
-          BRANCH: ${{ github.ref_name }}
-          BASE_REF: ${{ github.base_ref }}
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          set -euo pipefail
-
-          echo "======================================"
-          echo "Event: $EVENT_NAME"
-          echo "Ref: $REF"
-          echo "Branch: $BRANCH"
-          echo "Base Ref: $BASE_REF"
-          echo "Head Ref: $HEAD_REF"
-          echo "======================================"
-
-      # ---------------------------------------------------
-      # 3. CHECK UNRESOLVED MERGE CONFLICTS
-      # ---------------------------------------------------
+      # -------------------------------------------------
+      # 1. CHECK MERGE CONFLICT
+      # -------------------------------------------------
       - name: Check Unresolved Merge Conflicts
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "Checking unresolved merge conflicts..."
+          echo "Checking merge conflicts..."
 
-          # Check unmerged Git files
           if git ls-files -u | grep -q .; then
             echo "::error::Unmerged files detected!"
             exit 1
           fi
 
-          # Check conflict markers in source files
           if git grep -n -I -E \
             '^(<<<<<<< |=======$|>>>>>>> )' \
-            -- backend frontend database Dockerfile; then
+            -- .github backend frontend database Dockerfile docker-compose.yml; then
 
-            echo "::error::Merge conflict markers detected!"
+            echo "::error::Conflict markers detected!"
             exit 1
+          else
+            grep_status=$?
+
+            if [ "$grep_status" -ne 1 ]; then
+              echo "::error::Unable to complete conflict scan."
+              exit "$grep_status"
+            fi
           fi
 
-          echo "No unresolved merge conflicts detected."
+          echo "No merge conflict markers detected."
 
-      # ---------------------------------------------------
-      # 4. SETUP POSTGRESQL CLIENT
-      # ---------------------------------------------------
+      # -------------------------------------------------
+      # 2. DATABASE TEST
+      # -------------------------------------------------
       - name: Install PostgreSQL Client
-        shell: bash
         run: |
           set -euo pipefail
-
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      # ---------------------------------------------------
-      # 5. WAIT FOR POSTGRESQL
-      # ---------------------------------------------------
       - name: Wait for PostgreSQL
         shell: bash
         run: |
           set -euo pipefail
 
           for i in {1..30}; do
-
             if pg_isready \
               -h localhost \
               -p 5432 \
               -U test_user \
               -d test_db; then
-
               echo "PostgreSQL is ready."
               exit 0
             fi
@@ -136,12 +108,9 @@ jobs:
             sleep 2
           done
 
-          echo "::error::PostgreSQL did not become ready."
+          echo "::error::PostgreSQL connection timeout."
           exit 1
 
-      # ---------------------------------------------------
-      # 6. VALIDATE DATABASE SCHEMA
-      # ---------------------------------------------------
       - name: Validate Database Schema
         shell: bash
         env:
@@ -150,8 +119,6 @@ jobs:
           set -euo pipefail
 
           test -f database/schema.sql
-
-          echo "Validating database/schema.sql..."
 
           psql \
             -v ON_ERROR_STOP=1 \
@@ -162,11 +129,10 @@ jobs:
 
           echo "Database schema validation passed."
 
-      # ---------------------------------------------------
-      # 7. CHECK SUPABASE CONNECTION
-      # Only execute on push to main
-      # ---------------------------------------------------
-      - name: Test Connection to Supabase
+      # -------------------------------------------------
+      # 3. PRODUCTION DATABASE CHECK
+      # -------------------------------------------------
+      - name: Test Supabase Connection
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
@@ -174,12 +140,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$SUPABASE_DATABASE_URL" ]; then
-            echo "::error::Missing DATABASE_URL secret!"
-            exit 1
-          fi
-
-          echo "Checking Supabase connection..."
+          test -n "$SUPABASE_DATABASE_URL"
 
           PGCONNECT_TIMEOUT=10 psql \
             "$SUPABASE_DATABASE_URL" \
@@ -188,9 +149,9 @@ jobs:
 
           echo "Supabase connection passed."
 
-      # ---------------------------------------------------
-      # 8. SETUP PYTHON
-      # ---------------------------------------------------
+      # -------------------------------------------------
+      # 4. BACKEND UNIT TESTS
+      # -------------------------------------------------
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -198,42 +159,33 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
 
-      # ---------------------------------------------------
-      # 9. INSTALL BACKEND DEPENDENCIES
-      # ---------------------------------------------------
       - name: Install Backend Dependencies
-        shell: bash
         working-directory: backend
+        shell: bash
         run: |
           set -euo pipefail
 
           test -f requirements.txt
 
           python -m pip install --upgrade pip
-
           pip install -r requirements.txt
           pip install pytest
 
-      # ---------------------------------------------------
-      # 10. BACKEND UNIT TESTS
-      # ---------------------------------------------------
       - name: Run Backend Unit Tests
-        shell: bash
         working-directory: backend
+        shell: bash
         run: |
           set -euo pipefail
 
           test -d tests
 
-          echo "Running backend unit tests..."
-
           pytest tests/ -v
 
           echo "Backend tests passed."
 
-      # ---------------------------------------------------
-      # 11. SETUP NODE.JS
-      # ---------------------------------------------------
+      # -------------------------------------------------
+      # 5. FRONTEND BUILD TEST
+      # -------------------------------------------------
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -241,12 +193,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # ---------------------------------------------------
-      # 12. INSTALL FRONTEND DEPENDENCIES
-      # ---------------------------------------------------
       - name: Install Frontend Dependencies
-        shell: bash
         working-directory: frontend
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -255,12 +204,9 @@ jobs:
 
           npm ci
 
-      # ---------------------------------------------------
-      # 13. BUILD FRONTEND
-      # ---------------------------------------------------
       - name: Build Frontend
-        shell: bash
         working-directory: frontend
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -269,42 +215,28 @@ jobs:
           echo "Frontend build passed."
 
 
-  # =========================================================
-  # JOB 2: BUILD AND PUSH DOCKER IMAGE
-  # Only run after Job 1 succeeds
-  # Only execute on push to main
-  # =========================================================
-
+  # =====================================================
+  # JOB 2: BUILD & PUSH DOCKER IMAGE
+  # Chỉ chạy khi JOB 1 thành công và push vào main
+  # =====================================================
   build-and-push:
     name: "2. Build & Push Docker Image"
 
     needs: test-all
 
-    if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      needs.test-all.result == 'success'
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
 
-      # ---------------------------------------------------
-      # 1. CHECKOUT
-      # ---------------------------------------------------
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------
-      # 2. SETUP DOCKER BUILDX
-      # ---------------------------------------------------
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ---------------------------------------------------
-      # 3. VALIDATE DOCKER SECRETS
-      # ---------------------------------------------------
       - name: Validate Docker Hub Secrets
         shell: bash
         env:
@@ -316,62 +248,42 @@ jobs:
           test -n "$DOCKER_USERNAME"
           test -n "$DOCKER_PASSWORD"
 
-          echo "Docker Hub credentials are configured."
-
-      # ---------------------------------------------------
-      # 4. LOGIN DOCKER HUB
-      # ---------------------------------------------------
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ---------------------------------------------------
-      # 5. BUILD AND PUSH IMAGE
-      # ---------------------------------------------------
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-
           tags: |
             duongntoichoi/final_project:latest
             duongntoichoi/final_project:${{ github.sha }}
 
 
-  # =========================================================
+  # =====================================================
   # JOB 3: DEPLOY FRONTEND TO VERCEL
-  # Only run after Job 2 succeeds
-  # Only execute on push to main
-  # =========================================================
-
+  # Chỉ chạy khi JOB 2 thành công
+  # =====================================================
   deploy-frontend:
     name: "3. Deploy Frontend to Vercel"
 
     needs: build-and-push
 
-    if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      needs.build-and-push.result == 'success'
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
 
-      # ---------------------------------------------------
-      # 1. CHECKOUT
-      # ---------------------------------------------------
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------
-      # 2. SETUP NODE.JS
-      # ---------------------------------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -379,33 +291,22 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # ---------------------------------------------------
-      # 3. INSTALL FRONTEND DEPENDENCIES
-      # ---------------------------------------------------
       - name: Install Frontend Dependencies
-        shell: bash
         working-directory: frontend
+        shell: bash
         run: |
           set -euo pipefail
-
           npm ci
 
-      # ---------------------------------------------------
-      # 4. CHECK FRONTEND
-      # ---------------------------------------------------
       - name: Check Frontend
-        shell: bash
         working-directory: frontend
+        shell: bash
         run: |
           set -euo pipefail
 
           npm ls vite
-
           ./node_modules/.bin/vite --version
 
-      # ---------------------------------------------------
-      # 5. VALIDATE VERCEL SECRETS
-      # ---------------------------------------------------
       - name: Validate Vercel Secrets
         shell: bash
         env:
@@ -419,21 +320,11 @@ jobs:
           test -n "$VERCEL_ORG_ID"
           test -n "$VERCEL_PROJECT_ID"
 
-          echo "Vercel credentials are configured."
-
-      # ---------------------------------------------------
-      # 6. INSTALL VERCEL CLI
-      # ---------------------------------------------------
       - name: Install Vercel CLI
-        shell: bash
         run: |
           set -euo pipefail
-
           npm install --global vercel@latest
 
-      # ---------------------------------------------------
-      # 7. PULL VERCEL ENVIRONMENT
-      # ---------------------------------------------------
       - name: Pull Vercel Environment Information
         shell: bash
         env:
@@ -448,9 +339,6 @@ jobs:
             --yes \
             --token="$VERCEL_TOKEN"
 
-      # ---------------------------------------------------
-      # 8. BUILD PRODUCTION
-      # ---------------------------------------------------
       - name: Build Project with Vercel
         shell: bash
         env:
@@ -464,9 +352,6 @@ jobs:
             --prod \
             --token="$VERCEL_TOKEN"
 
-      # ---------------------------------------------------
-      # 9. DEPLOY PRODUCTION
-      # ---------------------------------------------------
       - name: Deploy Project to Vercel
         shell: bash
         env:
