@@ -4,3 +4,15 @@
   --font-serif: "Playfair Display", serif;
 }
 
+/* THÊM ĐOẠN NÀY VÀO DƯỚI CÙNG */
+html, body {
+  /* Màu nền dự phòng lấp đầy khoảng trắng khi cuộn lố (overscroll) ở dưới cùng */
+  background-color: #052e16;
+  /* Dải màu Gradient xanh đen giống hệt Tailwind */
+  background-image: linear-gradient(to bottom right, #042f2e, #064e3b, #052e16);
+  /* Khóa chặt background, không cho nó trôi theo khi cuộn (Chống rách nền iOS) */
+  background-attachment: fixed;
+  /* Chặn hiệu ứng cuộn lố (bounce) trên các trình duyệt hỗ trợ */
+  overscroll-behavior: none;
+  color: white;
+}
