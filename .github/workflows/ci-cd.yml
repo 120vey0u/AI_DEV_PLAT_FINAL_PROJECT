@@ -1,15 +1,24 @@
+
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+permissions:
+  contents: read
 
 jobs:
   test-all:
-    name: Check Frontend & Database
+    name: "1. Check Backend & Database & Frontend"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+      GEMINI_API_KEY: test-key-for-unit-tests
     services:
       postgres-test:
         image: postgres:15
@@ -20,72 +29,198 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test_user -d test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+      - name: Check Unresolved Merge Conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
 
+          echo "Checking unresolved Git conflicts..."
+
+          # Kiểm tra các file còn trạng thái unmerged
+          if git ls-files -u | grep -q .; then
+            echo "::error::Unmerged files detected!"
+            exit 1
+          fi
+
+          # Kiểm tra conflict markers còn sót trong source code
+          if git grep -n -I -E '^(<<<<<<< .+|=======|>>>>>>> .+)' -- .; then
+            echo "::error::Merge conflict markers detected!"
+            exit 1
+          fi
+
+          echo "No unresolved merge conflicts detected."
       - name: Install PostgreSQL Client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Validate database/schema.sql syntax on Local Test DB
+        shell: bash
         run: |
-          if [ -f database/schema.sql ]; then
-            echo "--> Đang kiểm tra cú pháp file schema.sql..."
-            PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f database/schema.sql || echo "⚠️ Lỗi schema SQL nhưng tạm thời bỏ qua để không chặn CI."
-            echo "--> Kiểm tra xong schema.sql!"
-          else
-            echo "--> Chưa tìm thấy file database/schema.sql, tự động bỏ qua bước này."
-          fi
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Test Connection to Supabase
+      - name: Wait for PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for i in {1..30}; do
+            if pg_isready \
+              -h localhost \
+              -p 5432 \
+              -U test_user \
+              -d test_db; then
+              echo "PostgreSQL is ready."
+              exit 0
+            fi
+
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+          echo "::error::PostgreSQL did not become ready."
+          exit 1
+
+      - name: Validate Database Schema
+        shell: bash
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGPASSWORD: test_password
         run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "--> Chưa có DATABASE_URL secret, bỏ qua kết nối Supabase."
-            exit 0
-          fi
-          echo "--> Đang kiểm tra kết nối tới Supabase Database..."
-          PGCONNECT_TIMEOUT=10 psql "$DATABASE_URL" -c "SELECT 1;" > /dev/null 2>&1 && echo "--> Kết nối Supabase thành công 100%!" || echo "⚠️ Không thể kết nối Supabase, tạm thời bỏ qua để không chặn CI."
+          set -euo pipefail
 
+          # Schema file là thành phần bắt buộc
+          test -f database/schema.sql
+
+          echo "Validating database/schema.sql..."
+
+          psql \
+            -v ON_ERROR_STOP=1 \
+            -h localhost \
+            -U test_user \
+            -d test_db \
+            -f database/schema.sql
+
+          echo "Database schema validation passed."
+      - name: Test Connection to Supabase
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SUPABASE_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$SUPABASE_DATABASE_URL" ]; then
+            echo "::error::Missing DATABASE_URL secret!"
+            exit 1
+          fi
+
+          echo "Checking cloud PostgreSQL connection..."
+
+          PGCONNECT_TIMEOUT=10 psql \
+            "$SUPABASE_DATABASE_URL" \
+            -v ON_ERROR_STOP=1 \
+            -c "SELECT 1;"
+
+          echo "Cloud database connection passed."
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Backend Dependencies
+        shell: bash
+        working-directory: backend
+        run: |
+          set -euo pipefail
+
+          python -m pip install --upgrade pip
+
+          test -f requirements.txt
+
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run Backend Unit Tests
+        shell: bash
+        working-directory: backend
+        run: |
+          set -euo pipefail
+
+          test -d tests
+
+          echo "Running backend unit tests..."
+
+          pytest tests/ -v
+
+          echo "Backend tests passed."
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Test Frontend Build
+      - name: Install Frontend Dependencies
+        shell: bash
+        working-directory: frontend
         run: |
-          if [ -d frontend ] && [ -s frontend/package.json ]; then
-            cd frontend
-            if [ -f package-lock.json ]; then
-              npm ci || npm install || echo "⚠️ Cài đặt packages frontend thất bại."
-            else
-              npm install || echo "⚠️ Không thể npm install frontend."
-            fi
-            npm run build || echo "⚠️ Frontend chưa sẵn sàng build, bỏ qua để không chặn CI."
-          else
-            echo "--> Thư mục frontend chưa có hoặc file package.json bị rỗng, tự động bỏ qua check Frontend."
-          fi
+          set -euo pipefail
+
+          test -f package.json
+          test -f package-lock.json
+
+          npm ci
+
+      - name: Build Frontend
+        shell: bash
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+
+          npm run build
+
+          echo "Frontend build passed."
   build-and-push:
-    name: Build & Push Docker Image
+    name: "2. Build & Push Docker Image"
+
     needs: test-all
+
+    if: >-
+      success() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 20
+
     steps:
+
       - name: Checkout Source Code
         uses: actions/checkout@v4
-  
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Validate Docker Hub Secrets
+        shell: bash
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          test -n "$DOCKER_USERNAME"
+          test -n "$DOCKER_PASSWORD"
+
+          echo "Docker Hub credentials are configured."
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-  
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -93,65 +228,101 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:latest
-            ${{ secrets.DOCKER_USERNAME }}/sentiment-ai-app:${{ github.sha }}
-
+            duongntoichoi/final_project:latest
+            duongntoichoi/final_project:${{ github.sha }}
   deploy-frontend:
-    name: Deploy Frontend to Vercel
-    needs: test-all
+    name: "3. Deploy Frontend to Vercel"
+
+    needs: build-and-push
+
+    if: >-
+      success() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Frontend Dependencies
+        shell: bash
+        working-directory: frontend
+        run: |
+          set -euo pipefail
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: npm
-        cache-dependency-path: frontend/package-lock.json
+          npm ci
+      - name: Check Frontend
+        shell: bash
+        working-directory: frontend
+        run: |
+          set -euo pipefail
 
-    - name: Install Frontend Dependencies
-      working-directory: ./frontend
-      run: npm ci
+          npm ls vite
 
-    - name: Check Frontend
-      working-directory: ./frontend
-      run: |
-        pwd
-        npm ls vite
-        ./node_modules/.bin/vite --version
+          ./node_modules/.bin/vite --version
+      - name: Validate Vercel Secrets
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
 
-    - name: Install Vercel CLI
-      run: npm install --global vercel@latest
+          test -n "$VERCEL_TOKEN"
+          test -n "$VERCEL_ORG_ID"
+          test -n "$VERCEL_PROJECT_ID"
 
-    - name: Pull Vercel Environment Information
-      run: |
-        vercel pull \
-          --environment=production \
-          --yes \
-          --token=${{ secrets.VERCEL_TOKEN }}
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          echo "Vercel credentials are configured."
+      - name: Install Vercel CLI
+        shell: bash
+        run: |
+          set -euo pipefail
 
-    - name: Build Project with Vercel
-      run: |
-        vercel build \
-          --prod \
-          --token=${{ secrets.VERCEL_TOKEN }}
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          npm install --global vercel@latest
+      - name: Pull Vercel Environment Information
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
 
-    - name: Deploy Project to Vercel
-      run: |
-        vercel deploy \
-          --prod \
-          --prebuilt \
-          --token=${{ secrets.VERCEL_TOKEN }}
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel pull \
+            --environment=production \
+            --yes \
+            --token="$VERCEL_TOKEN"
+      - name: Build Project with Vercel
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
 
+          vercel build \
+            --prod \
+            --token="$VERCEL_TOKEN"
+      - name: Deploy Project to Vercel
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+
+          vercel deploy \
+            --prod \
+            --prebuilt \
+            --token="$VERCEL_TOKEN"
+
+          echo "Frontend deployment completed successfully."
