@@ -1,76 +1,76 @@
 # Text Sentiment Analysis
 
-A web application for Vietnamese text sentiment analysis. The React frontend sends text to a FastAPI backend, which uses Gemini to identify sentiment and aspects, then stores the analysis history in PostgreSQL.
+Ứng dụng phân tích cảm xúc văn bản tiếng Việt. Frontend React gửi văn bản đến backend FastAPI. Backend sử dụng Gemini để phân tích cảm xúc và các khía cạnh được đề cập, sau đó lưu lịch sử phân tích vào PostgreSQL.
 
-## Architecture
+## Kiến trúc hệ thống
 
-| Component | Technology | Hosting |
+| Thành phần | Công nghệ | Nền tảng triển khai |
 |---|---|---|
 | Frontend | React, Vite, Tailwind CSS, Recharts | Vercel |
 | Backend API | Python, FastAPI, SQLAlchemy | Render |
-| Database | PostgreSQL | Supabase |
+| Cơ sở dữ liệu | PostgreSQL | Supabase |
 | AI | Gemini API (`gemini-3.5-flash-lite`) | Google AI API |
 | CI/CD | GitHub Actions | GitHub |
-| Container | Docker | Docker Hub |
+| Đóng gói ứng dụng | Docker | Docker Hub |
 
 ```mermaid
 flowchart TD
-    U[User] -->|HTTPS| V["Vercel - React frontend"]
+    U[Người dùng] -->|HTTPS| V["Vercel - React frontend"]
     V -->|REST API / JSON| R["Render - FastAPI backend"]
-    R <-->|Prompt / response| G["Gemini API"]
-    R -->|Read / write history| S[("Supabase - PostgreSQL")]
+    R <-->|Prompt / phản hồi| G["Gemini API"]
+    R -->|Đọc / ghi lịch sử| S[("Supabase - PostgreSQL")]
 ```
 
-The frontend calls the backend, not Gemini directly. Keep the Gemini API key on the backend.
+Frontend không gọi Gemini trực tiếp. API key của Gemini chỉ được lưu và sử dụng ở backend.
 
-## Requirements
+## Yêu cầu môi trường
 
-- Python 3.10+
-- Node.js 20+ and npm
-- PostgreSQL locally or a Supabase PostgreSQL database
-- Gemini API key
-- Git
-- Docker and Docker Compose (optional, for containerized backend)
+- Python 3.10 trở lên.
+- Node.js 20 trở lên và npm.
+- PostgreSQL cài trên máy hoặc cơ sở dữ liệu PostgreSQL trên Supabase.
+- Gemini API key.
+- Git.
+- Docker và Docker Compose (không bắt buộc, dùng khi muốn chạy backend bằng container).
 
-## 1. Clone the repository
+## 1. Tải mã nguồn
 
 ```bash
 git clone https://github.com/120vey0u/AI_DEV_PLAT_FINAL_PROJECT.git
 cd AI_DEV_PLAT_FINAL_PROJECT
 ```
 
-## 2. Set up PostgreSQL
+## 2. Thiết lập PostgreSQL
 
-Create a PostgreSQL database. Then create the application table using the repository schema.
+Tạo một database PostgreSQL. Sau đó tạo bảng lưu lịch sử phân tích bằng schema có sẵn trong repository.
 
-For a local PostgreSQL server:
+Nếu sử dụng PostgreSQL trên máy cá nhân:
 
 ```bash
 psql "postgresql://user:password@localhost:5432/dbname" -f database/schema.sql
 ```
 
-Replace the username, password, port, and database name with your own values.
+Thay tên người dùng, mật khẩu, port và tên database bằng thông tin thực tế của bạn.
 
-For Supabase, open **SQL Editor** in your project and run the contents of [database/schema.sql](database/schema.sql).
+Nếu sử dụng Supabase, mở **SQL Editor** trong dự án Supabase và chạy nội dung file [database/schema.sql](database/schema.sql).
 
-The table stores the submitted text, the JSONB analysis result, and its creation timestamp.
+Bảng `sentiment_history` lưu văn bản đầu vào, kết quả phân tích dạng JSONB và thời điểm tạo bản ghi.
 
-## 3. Configure the backend
+## 3. Cấu hình Backend
 
-Create `backend/.env`:
+Tạo file `backend/.env`:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-For Supabase, use the PostgreSQL connection string provided by Supabase as `DATABASE_URL`.
+Nếu sử dụng Supabase, đặt connection string PostgreSQL do Supabase cung cấp vào biến `DATABASE_URL`.
 
-The backend requires `DATABASE_URL` and `GEMINI_API_KEY`. Do not put the Gemini key in frontend configuration or commit real credentials to Git.
+Backend yêu cầu hai biến môi trường `DATABASE_URL` và `GEMINI_API_KEY`. Không đặt Gemini API key trong cấu hình frontend và không commit thông tin đăng nhập thật lên Git.
 
-## 4. Install and run the backend
+## 4. Cài đặt và chạy Backend
 
-From the repository root:
+Tại thư mục gốc của repository, mở terminal và thực hiện:
 
 ```bash
 cd backend
@@ -86,41 +86,41 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Backend URLs:
+Sau khi khởi chạy, backend có các địa chỉ:
 
-- Health check: [http://localhost:8000/health](http://localhost:8000/health)
-- Interactive API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Kiểm tra trạng thái: [http://localhost:8000/health](http://localhost:8000/health)
+- Tài liệu API tương tác: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-Keep this terminal running.
+Giữ terminal này hoạt động trong suốt quá trình sử dụng.
 
-## 5. Install and run the frontend
+## 5. Cài đặt và chạy Frontend
 
-Open a second terminal at the repository root:
+Mở terminal thứ hai tại thư mục gốc repository:
 
 ```bash
 cd frontend
 npm ci
 ```
 
-Create `frontend/.env.local`:
+Tạo file `frontend/.env.local`:
 
 ```env
 VITE_API_URL=http://localhost:8000
 ```
 
-Start Vite:
+Khởi chạy Vite:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite (normally [http://localhost:5173](http://localhost:5173)).
+Mở địa chỉ local được hiển thị trong terminal (mặc định là [http://localhost:5173](http://localhost:5173)).
 
-## Run the backend with Docker
+## Chạy Backend bằng Docker
 
-The Dockerfile packages **the FastAPI backend only**. The frontend and PostgreSQL database run separately.
+Dockerfile hiện tại chỉ đóng gói **backend FastAPI**. Frontend và PostgreSQL được chạy như các thành phần riêng biệt.
 
-Create a `.env` file in the repository root:
+Tạo file `.env` tại thư mục gốc repository:
 
 ```env
 PORT=8000
@@ -128,99 +128,101 @@ DATABASE_URL=postgresql://user:password@host.docker.internal:5432/dbname
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-When PostgreSQL runs directly on the host machine, use `host.docker.internal` instead of `localhost` from inside the container. The connection string format is:
+Khi PostgreSQL chạy trực tiếp trên máy host, backend bên trong container cần dùng `host.docker.internal` thay cho `localhost`. Cấu trúc connection string:
 
 ```text
 postgresql://user:password@host.docker.internal:port/dbname
 ```
 
-If PostgreSQL runs in another container, use that container's service name on the same Docker network. If using Supabase, use the Supabase connection string instead.
+Nếu PostgreSQL chạy trong một container khác, hãy sử dụng tên service của container đó trên cùng Docker network. Nếu sử dụng Supabase, hãy dùng connection string do Supabase cung cấp.
 
-On Linux, if `host.docker.internal` does not resolve, add this under the `backend` service in `docker-compose.yml`:
+Trên Linux, nếu `host.docker.internal` không phân giải được, thêm cấu hình sau vào service `backend` trong file `docker-compose.yml`:
 
 ```yaml
 extra_hosts:
   - "host.docker.internal:host-gateway"
 ```
 
-Build and start:
+Build và khởi chạy:
 
 ```bash
 docker compose up --build -d
 docker compose logs -f backend
 ```
 
-Stop:
+Dừng container:
 
 ```bash
 docker compose down
 ```
 
-## Deploy the system
+## Triển khai hệ thống
 
-Production uses **Supabase** for PostgreSQL, **Render** for FastAPI, and **Vercel** for React.
+Môi trường production sử dụng **Supabase** cho PostgreSQL, **Render** cho FastAPI và **Vercel** cho React.
 
-### 1. Supabase — database
+### 1. Supabase — Cơ sở dữ liệu
 
-1. Create a PostgreSQL project.
-2. Run [database/schema.sql](database/schema.sql) in the SQL Editor.
-3. Copy the database connection string. Keep it private.
+1. Tạo một dự án PostgreSQL trên Supabase.
+2. Mở SQL Editor và chạy file [database/schema.sql](database/schema.sql).
+3. Sao chép PostgreSQL connection string. Giữ thông tin này ở chế độ riêng tư.
 
-### 2. Render — backend
+### 2. Render — Backend
 
-Create a Render **Web Service** connected to this repository:
+Tạo một **Web Service** trên Render và kết nối với repository GitHub này.
+
+Cấu hình dịch vụ:
 
 - Runtime: **Docker**
-- Root Directory: repository root
+- Root Directory: thư mục gốc repository.
 - Dockerfile Path: `./Dockerfile`
 - Health Check Path: `/health`
 
-Add these environment variables in Render:
+Thêm các biến môi trường sau trong phần Environment của Render:
 
 ```env
 DATABASE_URL=<your-supabase-postgresql-connection-string>
 GEMINI_API_KEY=<your-gemini-api-key>
 ```
 
-The Dockerfile uses Render's `PORT` variable to start Uvicorn. After deployment, verify that `https://<your-render-service>.onrender.com/health` returns:
+Dockerfile sử dụng biến `PORT` do Render cung cấp để khởi chạy Uvicorn. Sau khi deploy, kiểm tra địa chỉ `https://<your-render-service>.onrender.com/health`. Kết quả mong đợi:
 
 ```json
 {"status":"ok"}
 ```
 
-### 3. Vercel — frontend
+### 3. Vercel — Frontend
 
-Connect the repository to Vercel and use the **repository root** as the project root. The root `vercel.json` is used by the GitHub Actions deployment workflow to build the frontend from `frontend/package.json`.
+Kết nối repository với Vercel và sử dụng **thư mục gốc repository** làm Project Root. File `vercel.json` ở thư mục gốc được workflow GitHub Actions sử dụng để build frontend từ `frontend/package.json`.
 
-Set this environment variable in Vercel:
+Thiết lập biến môi trường sau trong Vercel:
 
 ```env
 VITE_API_URL=https://<your-render-service>.onrender.com
 ```
 
-Deploy the project, open the Vercel URL, and test a text analysis.
+Deploy project, mở địa chỉ Vercel và thử phân tích một đoạn văn bản.
 
-### 4. CORS configuration
+### 4. Cấu hình CORS
 
-The backend currently allows:
+Backend hiện cho phép các origin sau:
 
 - `https://sentimentanalysis-kappa.vercel.app`
 - `http://localhost:5173`
 - `http://localhost:3000`
 
-If the Vercel domain changes, update `allow_origins` in [backend/main.py](backend/main.py) with the exact frontend origin and redeploy the backend.
+Nếu domain Vercel thay đổi, cập nhật danh sách `allow_origins` trong [backend/main.py](backend/main.py) với chính xác frontend origin mới, sau đó deploy lại backend.
 
 ## API endpoints
 
-| Method | Endpoint | Description |
+| Phương thức | Endpoint | Mô tả |
 |---|---|---|
-| GET | `/health` | Backend health check |
-| POST | `/api/v1/analyze` | Analyze text and save the result |
-| GET | `/api/v1/history` | List analysis history |
-| GET | `/api/v1/history/{history_id}` | Get one history record |
-| DELETE | `/api/v1/history/{history_id}` | Delete one history record |
+| GET | `/health` | Kiểm tra trạng thái backend |
+| POST | `/api/v1/analyze` | Phân tích văn bản và lưu kết quả |
+| GET | `/api/v1/history` | Lấy danh sách lịch sử phân tích |
+| GET | `/api/v1/history/{history_id}` | Lấy một bản ghi lịch sử |
+| DELETE | `/api/v1/history/{history_id}` | Xóa một bản ghi lịch sử |
 
-Example request:
+Ví dụ gọi API:
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/analyze" \\
@@ -230,32 +232,32 @@ curl -X POST "http://localhost:8000/api/v1/analyze" \\
 
 ## CI/CD
 
-The workflow is defined in [\.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml). It runs on pushes and pull requests targeting `main`.
+Workflow được cấu hình trong file [\.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml). Workflow được kích hoạt khi có `push` hoặc `pull request` hướng đến nhánh `main`.
 
-The current pipeline:
+Các bước chính trong pipeline hiện tại:
 
-1. Starts PostgreSQL and checks the database schema.
-2. Installs backend dependencies and runs backend tests.
-3. Installs frontend dependencies and builds the React app.
-4. Builds and pushes the backend Docker image to Docker Hub.
-5. Deploys the frontend using the Vercel CLI.
+1. Khởi chạy PostgreSQL và kiểm tra schema database.
+2. Cài đặt dependencies của backend và chạy backend tests.
+3. Cài đặt dependencies của frontend và build ứng dụng React.
+4. Build backend Docker image và push lên Docker Hub.
+5. Deploy frontend bằng Vercel CLI.
 
-Add these GitHub Actions **Secrets** for the corresponding steps:
+Thêm các GitHub Actions **Secrets** sau để các bước tương ứng có thể hoạt động:
 
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
-- `DATABASE_URL` (optional; used by the Supabase connectivity check)
+- `DATABASE_URL` (không bắt buộc; dùng cho bước kiểm tra kết nối Supabase)
 
-Render and Supabase are configured in their own dashboards.
+Render và Supabase được cấu hình riêng trong dashboard của từng nền tảng.
 
-> **Important:** Some checks in the current workflow use `|| echo`, which can hide a test, build, or database-check failure and still allow the job to succeed. A green run is not a reliable pass signal until those commands are changed to return a failing exit code.
+> **Lưu ý:** Một số lệnh kiểm tra trong workflow hiện tại sử dụng `|| echo`. Cách viết này có thể che giấu lỗi test, build hoặc kiểm tra database, khiến job vẫn được đánh dấu thành công. Vì vậy, trạng thái workflow màu xanh chưa đảm bảo tất cả kiểm tra đều vượt qua cho đến khi các lệnh này được sửa để trả về exit code lỗi khi thất bại.
 
-## Security
+## Bảo mật
 
-- Never commit `.env`, `.env.local`, database passwords, or API keys.
-- Keep `GEMINI_API_KEY` on the backend only.
-- Use separate credentials for development and production.
-- If a credential has been committed to a public repository, rotate it. Removing it from the latest file does not remove it from Git history.
+- Không commit các file `.env`, `.env.local`, mật khẩu database hoặc API key.
+- Chỉ sử dụng `GEMINI_API_KEY` ở backend.
+- Sử dụng thông tin đăng nhập riêng cho môi trường development và production.
+- Nếu thông tin đăng nhập từng được commit lên repository công khai, hãy đổi (rotate) thông tin đó. Xóa khỏi file mới nhất không đồng nghĩa với việc xóa khỏi Git history.
