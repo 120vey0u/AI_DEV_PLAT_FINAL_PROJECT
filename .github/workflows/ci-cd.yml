@@ -90,6 +90,9 @@ jobs:
   build-docker:
     name: 3. Build & Push Docker Image
     needs: test-frontend
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
@@ -117,6 +120,9 @@ jobs:
   deploy-vercel:
     name: 4. Deploy Frontend to Vercel
     needs: build-docker
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
