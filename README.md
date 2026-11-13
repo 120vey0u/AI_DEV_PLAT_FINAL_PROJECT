@@ -25,12 +25,9 @@ Frontend không gọi Gemini trực tiếp. Gemini API key được lưu và s�
 
 ## Yêu cầu môi trường
 
-- Git.
-- Python 3.10 trở lên.
-- Node.js 20 trở lên và npm.
-- PostgreSQL cài trên máy hoặc một PostgreSQL database trên Supabase.
-- Gemini API key.
-- Docker Engine và Docker Compose (chỉ cần khi chạy bằng Docker).
+- Git và Gemini API key.
+- **Chạy không sử dụng Docker:** Python 3.10 trở lên, Node.js 20 trở lên và npm, PostgreSQL local hoặc PostgreSQL trên Supabase.
+- **Chạy bằng Docker Compose:** Docker Engine và Docker Compose v2. Không cần cài Python, Node.js hoặc PostgreSQL trực tiếp trên máy host vì các thành phần này chạy trong container.
 
 ## Tải mã nguồn
 
@@ -39,15 +36,15 @@ git clone https://github.com/120vey0u/AI_DEV_PLAT_FINAL_PROJECT.git
 cd AI_DEV_PLAT_FINAL_PROJECT
 ```
 
-# Chạy ứng dụng
+## Chạy ứng dụng
 
 Có hai cách chạy ứng dụng: cài đặt và khởi chạy từng thành phần trực tiếp trên máy, hoặc sử dụng Docker Compose để chạy frontend, backend và database trong các container.
 
-## A. Chạy không sử dụng Docker
+### A. Chạy không sử dụng Docker
 
 Ở cách này, frontend và backend chạy trực tiếp trên máy bằng Node.js và Python. PostgreSQL có thể chạy trên máy local hoặc sử dụng Supabase.
 
-### Bước 1. Chuẩn bị PostgreSQL
+#### Bước 1. Chuẩn bị PostgreSQL
 
 Tạo một database PostgreSQL, sau đó khởi tạo bảng bằng file schema:
 
@@ -61,7 +58,7 @@ Nếu sử dụng Supabase, mở **SQL Editor** trong dự án Supabase và ch�
 
 Bảng `sentiment_history` lưu văn bản đầu vào, kết quả phân tích dạng JSONB và thời điểm tạo bản ghi.
 
-### Bước 2. Cấu hình và chạy Backend
+#### Bước 2. Cấu hình và chạy Backend
 
 Tạo file `backend/.env`:
 
@@ -95,7 +92,7 @@ Backend cung cấp các địa chỉ:
 
 Giữ terminal backend hoạt động trong khi sử dụng ứng dụng.
 
-### Bước 3. Cài đặt và chạy Frontend riêng
+#### Bước 3. Cài đặt và chạy Frontend riêng
 
 Frontend được cài đặt và chạy độc lập trong terminal thứ hai.
 
@@ -120,17 +117,19 @@ Truy cập địa chỉ được hiển thị trong terminal (mặc định là 
 
 Frontend cần backend hoạt động tại `http://localhost:8000` để gửi yêu cầu phân tích. PostgreSQL cũng phải sẵn sàng và được cấu hình đúng trong `backend/.env`.
 
-## B. Chạy bằng Docker Compose
+### B. Chạy bằng Docker Compose
 
-Docker Compose sử dụng file `docker-compose.yml` để khởi chạy ba service:
+File `docker-compose.yml` định nghĩa ba service: `frontend`, `backend` và `db`. **Mỗi service được chạy trong một container riêng.** Docker Compose quản lý vòng đời và mạng kết nối của cả ba container.
 
-| Service | Vai trò | Port trên máy host |
+Khi chạy `docker compose up --build -d`, Compose build image cho frontend và backend (PostgreSQL sử dụng image `postgres:15-alpine`), sau đó tạo và khởi chạy ba container tương ứng. Đây không phải là một container duy nhất chứa cả ứng dụng.
+
+| Service | Container | Vai trò | Port trên máy host |
 |---|---|---|
-| `frontend` | React/Vite development server | `3000` |
-| `backend` | FastAPI REST API | `8000` |
-| `db` | PostgreSQL 15 | `5432` |
+| `frontend` | `sentiment_frontend` | React/Vite development server | `3000` |
+| `backend` | `sentiment_backend` | FastAPI REST API | `8000` |
+| `db` | `sentiment_db` | PostgreSQL 15 | `5432` |
 
-### Bước 1. Cấu hình biến môi trường
+#### Bước 1. Cấu hình biến môi trường
 
 Tạo file `.env` tại thư mục gốc repository:
 
@@ -147,7 +146,7 @@ Các lưu ý về cấu hình:
 - `GEMINI_API_KEY` được backend sử dụng để gọi Gemini API.
 - File `.env` chứa thông tin nhạy cảm và không được commit lên Git.
 
-### Bước 2. Build và khởi chạy các container
+#### Bước 2. Build và khởi chạy các container
 
 Chạy lệnh tại thư mục gốc repository:
 
@@ -157,11 +156,21 @@ docker compose up --build -d
 
 Docker Compose thực hiện các công việc:
 
-1. Khởi chạy PostgreSQL 15 và kiểm tra trạng thái bằng health check.
-2. Chờ database sẵn sàng rồi khởi chạy backend FastAPI.
-3. Build và khởi chạy frontend từ `frontend/Dockerfile`.
+1. Tạo và khởi chạy container `sentiment_db` từ image PostgreSQL 15; kiểm tra trạng thái database bằng health check.
+2. Build backend image từ `./Dockerfile`, sau đó khởi chạy container `sentiment_backend` khi database đã healthy.
+3. Build frontend image từ `frontend/Dockerfile` và khởi chạy container `sentiment_frontend`.
 
-### Bước 3. Truy cập ứng dụng
+Sau lệnh này, cả ba container đều do Docker Compose quản lý. Không cần chạy thêm lệnh `docker run` để khởi động frontend.
+
+#### Bước 3. Truy cập ứng dụng
+
+Kiểm tra các container đang chạy:
+
+```bash
+docker compose ps
+```
+
+Kết quả sẽ hiển thị ba service/container `frontend`, `backend` và `db`.
 
 Sau khi các container khởi động thành công:
 
@@ -172,7 +181,7 @@ Sau khi các container khởi động thành công:
 
 Frontend trong Compose gửi yêu cầu đến `http://localhost:8000`. Đây là địa chỉ API mà trình duyệt trên máy host truy cập; không thay bằng hostname nội bộ `backend` trong cấu hình `VITE_API_URL`.
 
-### Bước 4. Theo dõi và dừng các container
+#### Bước 4. Theo dõi và dừng các container
 
 ```bash
 # Xem trạng thái container
@@ -189,56 +198,15 @@ PostgreSQL sử dụng named volume `postgres_data` để lưu dữ liệu. File
 
 **Lưu ý:** Lệnh `docker compose down -v` xóa cả volume `postgres_data` và dữ liệu database local. Chỉ sử dụng lệnh này khi cần reset database.
 
-### Chạy Frontend riêng ngoài Docker Compose
+Trong cấu hình Docker Compose tiêu chuẩn, frontend đã là một service và được chạy trong container `sentiment_frontend` cùng với backend và database. Không cần build hoặc khởi chạy frontend bằng một lệnh Docker riêng.
 
-Có thể chạy database và backend bằng Docker, đồng thời chạy frontend trực tiếp trên máy bằng Node.js. Cách này hữu ích khi phát triển giao diện mà không cần chạy frontend container.
-
-Khởi động database và backend:
+Nếu muốn phát triển frontend trực tiếp trên máy host thay vì dùng frontend container, hãy sử dụng hướng dẫn ở mục **A. Chạy không sử dụng Docker** cho frontend và đặt `VITE_API_URL=http://localhost:8000`. Khi đó có thể chỉ khởi chạy database và backend bằng:
 
 ```bash
 docker compose up --build -d db backend
 ```
 
-Mở terminal khác và chạy frontend:
-
-```bash
-cd frontend
-npm ci
-```
-
-Tạo file `frontend/.env.local`:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-Khởi động frontend và truy cập [http://localhost:5173](http://localhost:5173):
-
-```bash
-npm run dev
-```
-
-### Chạy Frontend trong container riêng
-
-Frontend cũng có thể được build và chạy trong một container độc lập, trong khi backend và database tiếp tục chạy bằng Docker Compose.
-
-```bash
-# Khởi động database và backend
-docker compose up --build -d db backend
-
-# Build frontend image
-docker build -t sentiment-frontend ./frontend
-
-# Khởi chạy frontend container
-docker run --rm --name sentiment-frontend \
-  -p 3000:3000 \
-  -e VITE_API_URL=http://localhost:8000 \
-  sentiment-frontend
-```
-
-Truy cập [http://localhost:3000](http://localhost:3000).
-
-`frontend/Dockerfile` sử dụng Vite development server (`npm run dev`), phù hợp cho môi trường phát triển và kiểm thử. Frontend production được build và triển khai trên Vercel.
+Đây là cách chạy kết hợp tùy chọn dành cho phát triển, không phải bước bổ sung bắt buộc của Docker Compose.
 
 ## Triển khai hệ thống
 
