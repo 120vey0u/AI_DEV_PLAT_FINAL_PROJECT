@@ -30,7 +30,7 @@ Frontend không gọi Gemini trực tiếp. API key của Gemini chỉ được 
 - PostgreSQL cài trên máy hoặc cơ sở dữ liệu PostgreSQL trên Supabase.
 - Gemini API key.
 - Git.
-- Docker và Docker Compose (không bắt buộc, dùng khi muốn chạy backend bằng container).
+- Docker và Docker Compose (tùy chọn, dùng để chạy toàn bộ hệ thống trong container).
 
 ## 1. Tải mã nguồn
 
@@ -116,45 +116,129 @@ npm run dev
 
 Mở địa chỉ local được hiển thị trong terminal (mặc định là [http://localhost:5173](http://localhost:5173)).
 
-## Chạy Backend bằng Docker
+## Chạy toàn bộ hệ thống bằng Docker Compose
 
-Dockerfile hiện tại chỉ đóng gói **backend FastAPI**. Frontend và PostgreSQL được chạy như các thành phần riêng biệt.
+File `docker-compose.yml` hiện cấu hình **3 service**: PostgreSQL (`db`), FastAPI (`backend`) và React/Vite (`frontend`). Vì vậy, chạy Docker Compose sẽ khởi động cả frontend lẫn database, không chỉ riêng backend.
+
+### 1. Cấu hình biến môi trường
 
 Tạo file `.env` tại thư mục gốc repository:
 
 ```env
 PORT=8000
-DATABASE_URL=postgresql://user:password@host.docker.internal:5432/dbname
+DATABASE_URL=postgresql://postgres:postgres@db:5432/sentiment_db
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Khi PostgreSQL chạy trực tiếp trên máy host, backend bên trong container cần dùng `host.docker.internal` thay cho `localhost`. Cấu trúc connection string:
+Giải thích:
 
-```text
-postgresql://user:password@host.docker.internal:port/dbname
-```
+- `DATABASE_URL` dùng hostname `db` vì backend kết nối tới PostgreSQL thông qua tên service trong Docker network. Không dùng `localhost` ở đây.
+- Tên database, username và password trong connection string phải khớp với cấu hình `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` của service `db` trong `docker-compose.yml`. Hiện tại các giá trị local mặc định đều là `sentiment_db` và `postgres`.
+- `GEMINI_API_KEY` là API key dùng bởi backend.
+- File `.env` đã được Git ignore; không commit file này lên repository.
 
-Nếu PostgreSQL chạy trong một container khác, hãy sử dụng tên service của container đó trên cùng Docker network. Nếu sử dụng Supabase, hãy dùng connection string do Supabase cung cấp.
+### 2. Build và khởi chạy
 
-Trên Linux, nếu `host.docker.internal` không phân giải được, thêm cấu hình sau vào service `backend` trong file `docker-compose.yml`:
-
-```yaml
-extra_hosts:
-  - "host.docker.internal:host-gateway"
-```
-
-Build và khởi chạy:
+Chạy lệnh tại thư mục gốc:
 
 ```bash
 docker compose up --build -d
-docker compose logs -f backend
 ```
 
-Dừng container:
+Docker Compose sẽ:
+
+1. Khởi chạy PostgreSQL 15 và kiểm tra trạng thái database bằng health check.
+2. Chờ database sẵn sàng rồi khởi chạy backend FastAPI.
+3. Build và khởi chạy frontend bằng Dockerfile trong thư mục `frontend/`.
+
+### 3. Các service và địa chỉ truy cập
+
+| Service | Vai trò | Port trên máy host |
+|---|---|---|
+| `frontend` | Giao diện React chạy bằng Vite | `3000` |
+| `backend` | FastAPI REST API | `8000` |
+| `db` | PostgreSQL 15 | `5432` |
+
+Sau khi các container khởi động thành công:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend health check: [http://localhost:8000/health](http://localhost:8000/health)
+- API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- PostgreSQL: `localhost:5432` (kết nối từ công cụ database trên máy host).
+
+Trong cấu hình Compose hiện tại, frontend gọi API qua `http://localhost:8000`. Đây là địa chỉ mà trình duyệt của người dùng truy cập; không thay bằng hostname nội bộ `backend` trong biến `VITE_API_URL`.
+
+### 4. Theo dõi và dừng hệ thống
 
 ```bash
+# Xem trạng thái các container
+docker compose ps
+
+# Theo dõi log của cả 3 service
+docker compose logs -f frontend backend db
+
+# Dừng và xóa các container, giữ lại dữ liệu PostgreSQL
 docker compose down
 ```
+
+PostgreSQL sử dụng named volume `postgres_data` để lưu dữ liệu. File `database/schema.sql` được mount vào thư mục khởi tạo của PostgreSQL và chỉ tự động chạy khi volume database được tạo lần đầu.
+
+**Lưu ý:** `docker compose down -v` sẽ xóa cả volume `postgres_data`, đồng nghĩa với việc xóa dữ liệu database local. Chỉ chạy lệnh này khi bạn thực sự muốn reset database.
+
+## Chạy Frontend riêng
+
+Có thể chạy frontend độc lập với Docker Compose hoặc chạy frontend trong một container riêng. Trong cả hai trường hợp, backend API vẫn phải được khởi động và truy cập được tại `http://localhost:8000`.
+
+### Cách 1: Chạy frontend trực tiếp bằng Node.js
+
+Trước tiên, dùng Docker Compose để chỉ khởi động database và backend:
+
+```bash
+docker compose up --build -d db backend
+```
+
+Sau đó, mở terminal mới và chạy frontend trên máy host:
+
+```bash
+cd frontend
+npm ci
+```
+
+Tạo file `.env.local` trong thư mục `frontend/`:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Khởi động frontend:
+
+```bash
+npm run dev
+```
+
+Truy cập [http://localhost:5173](http://localhost:5173). Backend được cung cấp bởi container và frontend chạy trực tiếp bằng Node.js.
+
+### Cách 2: Build và chạy frontend trong container riêng
+
+Đảm bảo backend và database đang chạy, sau đó build image frontend tại thư mục gốc:
+
+```bash
+docker compose up --build -d db backend
+docker build -t sentiment-frontend ./frontend
+```
+
+Chạy frontend container:
+
+```bash
+docker run --rm --name sentiment-frontend \
+  -p 3000:3000 \
+  -e VITE_API_URL=http://localhost:8000 \
+  sentiment-frontend
+```
+
+Truy cập [http://localhost:3000](http://localhost:3000).
+
+**Lưu ý:** `frontend/Dockerfile` hiện chạy Vite development server (`npm run dev`), phù hợp cho development và kiểm thử. Frontend production hiện được build và triển khai riêng trên Vercel.
 
 ## Triển khai hệ thống
 
@@ -225,8 +309,8 @@ Nếu domain Vercel thay đổi, cập nhật danh sách `allow_origins` trong [
 Ví dụ gọi API:
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/analyze" \\
-  -H "Content-Type: application/json" \\
+curl -X POST "http://localhost:8000/api/v1/analyze" \
+  -H "Content-Type: application/json" \
   -d '{"text":"Dịch vụ tốt, nhân viên thân thiện nhưng giá hơi cao."}'
 ```
 
@@ -239,25 +323,24 @@ Các bước chính trong pipeline hiện tại:
 1. Khởi chạy PostgreSQL và kiểm tra schema database.
 2. Cài đặt dependencies của backend và chạy backend tests.
 3. Cài đặt dependencies của frontend và build ứng dụng React.
-4. Build backend Docker image và push lên Docker Hub.
-5. Deploy frontend bằng Vercel CLI.
+4. Build backend Docker image và push lên Docker Hub (chỉ khi push lên nhánh `main`).
+5. Deploy frontend bằng Vercel CLI (chỉ khi push lên nhánh `main`).
 
-Thêm các GitHub Actions **Secrets** sau để các bước tương ứng có thể hoạt động:
+Thêm các GitHub Actions **Secrets** sau để workflow hoạt động:
 
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
-- `DATABASE_URL` (không bắt buộc; dùng cho bước kiểm tra kết nối Supabase)
+- `DATABASE_URL` — connection string của Supabase, được sử dụng ở bước kiểm tra kết nối database trong workflow hiện tại.
 
-Render và Supabase được cấu hình riêng trong dashboard của từng nền tảng.
-
-> **Lưu ý:** Một số lệnh kiểm tra trong workflow hiện tại sử dụng `|| echo`. Cách viết này có thể che giấu lỗi test, build hoặc kiểm tra database, khiến job vẫn được đánh dấu thành công. Vì vậy, trạng thái workflow màu xanh chưa đảm bảo tất cả kiểm tra đều vượt qua cho đến khi các lệnh này được sửa để trả về exit code lỗi khi thất bại.
+Render và Supabase được cấu hình riêng trong dashboard của từng nền tảng. Backend image được build và push lên Docker Hub; bước deploy Render được quản lý riêng theo cấu hình của Render.
 
 ## Bảo mật
 
 - Không commit các file `.env`, `.env.local`, mật khẩu database hoặc API key.
 - Chỉ sử dụng `GEMINI_API_KEY` ở backend.
+- Các tài khoản mặc định trong Docker Compose chỉ dành cho môi trường local; hãy thay đổi trước khi sử dụng trong môi trường chia sẻ hoặc production.
 - Sử dụng thông tin đăng nhập riêng cho môi trường development và production.
 - Nếu thông tin đăng nhập từng được commit lên repository công khai, hãy đổi (rotate) thông tin đó. Xóa khỏi file mới nhất không đồng nghĩa với việc xóa khỏi Git history.
