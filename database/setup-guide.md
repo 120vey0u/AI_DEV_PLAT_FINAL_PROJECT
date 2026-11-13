@@ -7,4 +7,4 @@
    - `created_at`: Timestamp with time zone
 3. **Connection String Environment Variable**:
    ```env
-   DATABASE_URL=postgresql://postgres:finalproject2026AI@db.idtwosgqwqqehbutck.supabase.co:5432/postgres
+   DATABASE_URL=postgresql://user:password@host:port/dbname
