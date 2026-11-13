@@ -1,6 +1,6 @@
 # Text Sentiment Analysis
 
-Ứng dụng phân tích cảm xúc văn bản tiếng Việt. Frontend React gửi văn bản đến backend FastAPI. Backend sử dụng Gemini để phân tích cảm xúc và các khía cạnh được đề cập, sau đó lưu lịch sử phân tích vào PostgreSQL.
+Ứng dụng phân tích cảm xúc văn bản tiếng Việt. Người dùng nhập văn bản trên giao diện React; frontend gửi yêu cầu đến backend FastAPI. Backend sử dụng Gemini API để phân tích cảm xúc và các khía cạnh được đề cập, sau đó lưu kết quả vào PostgreSQL.
 
 ## Kiến trúc hệ thống
 
@@ -21,41 +21,47 @@ flowchart TD
     R -->|Đọc / ghi lịch sử| S[("Supabase - PostgreSQL")]
 ```
 
-Frontend không gọi Gemini trực tiếp. API key của Gemini chỉ được lưu và sử dụng ở backend.
+Frontend không gọi Gemini trực tiếp. Gemini API key được lưu và sử dụng ở backend.
 
 ## Yêu cầu môi trường
 
+- Git.
 - Python 3.10 trở lên.
 - Node.js 20 trở lên và npm.
-- PostgreSQL cài trên máy hoặc cơ sở dữ liệu PostgreSQL trên Supabase.
+- PostgreSQL cài trên máy hoặc một PostgreSQL database trên Supabase.
 - Gemini API key.
-- Git.
-- Docker và Docker Compose (tùy chọn, dùng để chạy toàn bộ hệ thống trong container).
+- Docker Engine và Docker Compose (chỉ cần khi chạy bằng Docker).
 
-## 1. Tải mã nguồn
+## Tải mã nguồn
 
 ```bash
 git clone https://github.com/120vey0u/AI_DEV_PLAT_FINAL_PROJECT.git
 cd AI_DEV_PLAT_FINAL_PROJECT
 ```
 
-## 2. Thiết lập PostgreSQL
+# Chạy ứng dụng
 
-Tạo một database PostgreSQL. Sau đó tạo bảng lưu lịch sử phân tích bằng schema có sẵn trong repository.
+Có hai cách chạy ứng dụng: cài đặt và khởi chạy từng thành phần trực tiếp trên máy, hoặc sử dụng Docker Compose để chạy frontend, backend và database trong các container.
 
-Nếu sử dụng PostgreSQL trên máy cá nhân:
+## A. Chạy không sử dụng Docker
+
+Ở cách này, frontend và backend chạy trực tiếp trên máy bằng Node.js và Python. PostgreSQL có thể chạy trên máy local hoặc sử dụng Supabase.
+
+### Bước 1. Chuẩn bị PostgreSQL
+
+Tạo một database PostgreSQL, sau đó khởi tạo bảng bằng file schema:
 
 ```bash
 psql "postgresql://user:password@localhost:5432/dbname" -f database/schema.sql
 ```
 
-Thay tên người dùng, mật khẩu, port và tên database bằng thông tin thực tế của bạn.
+Thay `user`, `password`, `port` và `dbname` bằng thông tin database của bạn.
 
-Nếu sử dụng Supabase, mở **SQL Editor** trong dự án Supabase và chạy nội dung file [database/schema.sql](database/schema.sql).
+Nếu sử dụng Supabase, mở **SQL Editor** trong dự án Supabase và chạy nội dung file [database/schema.sql](database/schema.sql). Sao chép PostgreSQL connection string để sử dụng ở bước cấu hình backend.
 
 Bảng `sentiment_history` lưu văn bản đầu vào, kết quả phân tích dạng JSONB và thời điểm tạo bản ghi.
 
-## 3. Cấu hình Backend
+### Bước 2. Cấu hình và chạy Backend
 
 Tạo file `backend/.env`:
 
@@ -64,13 +70,9 @@ DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Nếu sử dụng Supabase, đặt connection string PostgreSQL do Supabase cung cấp vào biến `DATABASE_URL`.
+Khi sử dụng Supabase, thay giá trị `DATABASE_URL` bằng connection string do Supabase cung cấp.
 
-Backend yêu cầu hai biến môi trường `DATABASE_URL` và `GEMINI_API_KEY`. Không đặt Gemini API key trong cấu hình frontend và không commit thông tin đăng nhập thật lên Git.
-
-## 4. Cài đặt và chạy Backend
-
-Tại thư mục gốc của repository, mở terminal và thực hiện:
+Mở terminal tại thư mục gốc repository và chạy:
 
 ```bash
 cd backend
@@ -86,16 +88,16 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Sau khi khởi chạy, backend có các địa chỉ:
+Backend cung cấp các địa chỉ:
 
-- Kiểm tra trạng thái: [http://localhost:8000/health](http://localhost:8000/health)
-- Tài liệu API tương tác: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health check: [http://localhost:8000/health](http://localhost:8000/health)
+- API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-Giữ terminal này hoạt động trong suốt quá trình sử dụng.
+Giữ terminal backend hoạt động trong khi sử dụng ứng dụng.
 
-## 5. Cài đặt và chạy Frontend
+### Bước 3. Cài đặt và chạy Frontend riêng
 
-Mở terminal thứ hai tại thư mục gốc repository:
+Frontend được cài đặt và chạy độc lập trong terminal thứ hai.
 
 ```bash
 cd frontend
@@ -108,19 +110,27 @@ Tạo file `frontend/.env.local`:
 VITE_API_URL=http://localhost:8000
 ```
 
-Khởi chạy Vite:
+Khởi chạy Vite development server:
 
 ```bash
 npm run dev
 ```
 
-Mở địa chỉ local được hiển thị trong terminal (mặc định là [http://localhost:5173](http://localhost:5173)).
+Truy cập địa chỉ được hiển thị trong terminal (mặc định là [http://localhost:5173](http://localhost:5173)).
 
-## Chạy toàn bộ hệ thống bằng Docker Compose
+Frontend cần backend hoạt động tại `http://localhost:8000` để gửi yêu cầu phân tích. PostgreSQL cũng phải sẵn sàng và được cấu hình đúng trong `backend/.env`.
 
-File `docker-compose.yml` hiện cấu hình **3 service**: PostgreSQL (`db`), FastAPI (`backend`) và React/Vite (`frontend`). Vì vậy, chạy Docker Compose sẽ khởi động cả frontend lẫn database, không chỉ riêng backend.
+## B. Chạy bằng Docker Compose
 
-### 1. Cấu hình biến môi trường
+Docker Compose sử dụng file `docker-compose.yml` để khởi chạy ba service:
+
+| Service | Vai trò | Port trên máy host |
+|---|---|---|
+| `frontend` | React/Vite development server | `3000` |
+| `backend` | FastAPI REST API | `8000` |
+| `db` | PostgreSQL 15 | `5432` |
+
+### Bước 1. Cấu hình biến môi trường
 
 Tạo file `.env` tại thư mục gốc repository:
 
@@ -130,34 +140,28 @@ DATABASE_URL=postgresql://postgres:postgres@db:5432/sentiment_db
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Giải thích:
+Các lưu ý về cấu hình:
 
-- `DATABASE_URL` dùng hostname `db` vì backend kết nối tới PostgreSQL thông qua tên service trong Docker network. Không dùng `localhost` ở đây.
-- Tên database, username và password trong connection string phải khớp với cấu hình `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` của service `db` trong `docker-compose.yml`. Hiện tại các giá trị local mặc định đều là `sentiment_db` và `postgres`.
-- `GEMINI_API_KEY` là API key dùng bởi backend.
-- File `.env` đã được Git ignore; không commit file này lên repository.
+- Hostname `db` là tên service PostgreSQL trong Docker network. Backend chạy trong container phải dùng `db`, không dùng `localhost`, để kết nối tới database.
+- Connection string phải khớp với các giá trị `POSTGRES_DB`, `POSTGRES_USER` và `POSTGRES_PASSWORD` được khai báo trong service `db` của `docker-compose.yml`.
+- `GEMINI_API_KEY` được backend sử dụng để gọi Gemini API.
+- File `.env` chứa thông tin nhạy cảm và không được commit lên Git.
 
-### 2. Build và khởi chạy
+### Bước 2. Build và khởi chạy các container
 
-Chạy lệnh tại thư mục gốc:
+Chạy lệnh tại thư mục gốc repository:
 
 ```bash
 docker compose up --build -d
 ```
 
-Docker Compose sẽ:
+Docker Compose thực hiện các công việc:
 
-1. Khởi chạy PostgreSQL 15 và kiểm tra trạng thái database bằng health check.
+1. Khởi chạy PostgreSQL 15 và kiểm tra trạng thái bằng health check.
 2. Chờ database sẵn sàng rồi khởi chạy backend FastAPI.
-3. Build và khởi chạy frontend bằng Dockerfile trong thư mục `frontend/`.
+3. Build và khởi chạy frontend từ `frontend/Dockerfile`.
 
-### 3. Các service và địa chỉ truy cập
-
-| Service | Vai trò | Port trên máy host |
-|---|---|---|
-| `frontend` | Giao diện React chạy bằng Vite | `3000` |
-| `backend` | FastAPI REST API | `8000` |
-| `db` | PostgreSQL 15 | `5432` |
+### Bước 3. Truy cập ứng dụng
 
 Sau khi các container khởi động thành công:
 
@@ -166,70 +170,66 @@ Sau khi các container khởi động thành công:
 - API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 - PostgreSQL: `localhost:5432` (kết nối từ công cụ database trên máy host).
 
-Trong cấu hình Compose hiện tại, frontend gọi API qua `http://localhost:8000`. Đây là địa chỉ mà trình duyệt của người dùng truy cập; không thay bằng hostname nội bộ `backend` trong biến `VITE_API_URL`.
+Frontend trong Compose gửi yêu cầu đến `http://localhost:8000`. Đây là địa chỉ API mà trình duyệt trên máy host truy cập; không thay bằng hostname nội bộ `backend` trong cấu hình `VITE_API_URL`.
 
-### 4. Theo dõi và dừng hệ thống
+### Bước 4. Theo dõi và dừng các container
 
 ```bash
-# Xem trạng thái các container
+# Xem trạng thái container
 docker compose ps
 
-# Theo dõi log của cả 3 service
+# Theo dõi log của các service
 docker compose logs -f frontend backend db
 
-# Dừng và xóa các container, giữ lại dữ liệu PostgreSQL
+# Dừng và xóa container, giữ lại dữ liệu PostgreSQL
 docker compose down
 ```
 
-PostgreSQL sử dụng named volume `postgres_data` để lưu dữ liệu. File `database/schema.sql` được mount vào thư mục khởi tạo của PostgreSQL và chỉ tự động chạy khi volume database được tạo lần đầu.
+PostgreSQL sử dụng named volume `postgres_data` để lưu dữ liệu. File `database/schema.sql` được mount vào thư mục khởi tạo của PostgreSQL và tự động chạy khi database volume được khởi tạo lần đầu.
 
-**Lưu ý:** `docker compose down -v` sẽ xóa cả volume `postgres_data`, đồng nghĩa với việc xóa dữ liệu database local. Chỉ chạy lệnh này khi bạn thực sự muốn reset database.
+**Lưu ý:** Lệnh `docker compose down -v` xóa cả volume `postgres_data` và dữ liệu database local. Chỉ sử dụng lệnh này khi cần reset database.
 
-## Chạy Frontend riêng
+### Chạy Frontend riêng ngoài Docker Compose
 
-Có thể chạy frontend độc lập với Docker Compose hoặc chạy frontend trong một container riêng. Trong cả hai trường hợp, backend API vẫn phải được khởi động và truy cập được tại `http://localhost:8000`.
+Có thể chạy database và backend bằng Docker, đồng thời chạy frontend trực tiếp trên máy bằng Node.js. Cách này hữu ích khi phát triển giao diện mà không cần chạy frontend container.
 
-### Cách 1: Chạy frontend trực tiếp bằng Node.js
-
-Trước tiên, dùng Docker Compose để chỉ khởi động database và backend:
+Khởi động database và backend:
 
 ```bash
 docker compose up --build -d db backend
 ```
 
-Sau đó, mở terminal mới và chạy frontend trên máy host:
+Mở terminal khác và chạy frontend:
 
 ```bash
 cd frontend
 npm ci
 ```
 
-Tạo file `.env.local` trong thư mục `frontend/`:
+Tạo file `frontend/.env.local`:
 
 ```env
 VITE_API_URL=http://localhost:8000
 ```
 
-Khởi động frontend:
+Khởi động frontend và truy cập [http://localhost:5173](http://localhost:5173):
 
 ```bash
 npm run dev
 ```
 
-Truy cập [http://localhost:5173](http://localhost:5173). Backend được cung cấp bởi container và frontend chạy trực tiếp bằng Node.js.
+### Chạy Frontend trong container riêng
 
-### Cách 2: Build và chạy frontend trong container riêng
-
-Đảm bảo backend và database đang chạy, sau đó build image frontend tại thư mục gốc:
+Frontend cũng có thể được build và chạy trong một container độc lập, trong khi backend và database tiếp tục chạy bằng Docker Compose.
 
 ```bash
+# Khởi động database và backend
 docker compose up --build -d db backend
+
+# Build frontend image
 docker build -t sentiment-frontend ./frontend
-```
 
-Chạy frontend container:
-
-```bash
+# Khởi chạy frontend container
 docker run --rm --name sentiment-frontend \
   -p 3000:3000 \
   -e VITE_API_URL=http://localhost:8000 \
@@ -238,7 +238,7 @@ docker run --rm --name sentiment-frontend \
 
 Truy cập [http://localhost:3000](http://localhost:3000).
 
-**Lưu ý:** `frontend/Dockerfile` hiện chạy Vite development server (`npm run dev`), phù hợp cho development và kiểm thử. Frontend production hiện được build và triển khai riêng trên Vercel.
+`frontend/Dockerfile` sử dụng Vite development server (`npm run dev`), phù hợp cho môi trường phát triển và kiểm thử. Frontend production được build và triển khai trên Vercel.
 
 ## Triển khai hệ thống
 
@@ -248,11 +248,11 @@ Môi trường production sử dụng **Supabase** cho PostgreSQL, **Render** ch
 
 1. Tạo một dự án PostgreSQL trên Supabase.
 2. Mở SQL Editor và chạy file [database/schema.sql](database/schema.sql).
-3. Sao chép PostgreSQL connection string. Giữ thông tin này ở chế độ riêng tư.
+3. Sao chép PostgreSQL connection string và lưu trữ an toàn.
 
 ### 2. Render — Backend
 
-Tạo một **Web Service** trên Render và kết nối với repository GitHub này.
+Tạo một **Web Service** trên Render và kết nối với repository GitHub.
 
 Cấu hình dịch vụ:
 
@@ -261,7 +261,7 @@ Cấu hình dịch vụ:
 - Dockerfile Path: `./Dockerfile`
 - Health Check Path: `/health`
 
-Thêm các biến môi trường sau trong phần Environment của Render:
+Thêm các biến môi trường trong phần Environment của Render:
 
 ```env
 DATABASE_URL=<your-supabase-postgresql-connection-string>
@@ -276,25 +276,25 @@ Dockerfile sử dụng biến `PORT` do Render cung cấp để khởi chạy Uv
 
 ### 3. Vercel — Frontend
 
-Kết nối repository với Vercel và sử dụng **thư mục gốc repository** làm Project Root. File `vercel.json` ở thư mục gốc được workflow GitHub Actions sử dụng để build frontend từ `frontend/package.json`.
+Kết nối repository với Vercel và sử dụng thư mục gốc repository làm Project Root. File `vercel.json` ở thư mục gốc định nghĩa cấu hình build frontend từ `frontend/package.json`.
 
-Thiết lập biến môi trường sau trong Vercel:
+Thiết lập biến môi trường trong Vercel:
 
 ```env
 VITE_API_URL=https://<your-render-service>.onrender.com
 ```
 
-Deploy project, mở địa chỉ Vercel và thử phân tích một đoạn văn bản.
+Deploy project và truy cập domain Vercel để kiểm tra chức năng phân tích văn bản.
 
 ### 4. Cấu hình CORS
 
-Backend hiện cho phép các origin sau:
+Backend cho phép các origin sau:
 
 - `https://sentimentanalysis-kappa.vercel.app`
 - `http://localhost:5173`
 - `http://localhost:3000`
 
-Nếu domain Vercel thay đổi, cập nhật danh sách `allow_origins` trong [backend/main.py](backend/main.py) với chính xác frontend origin mới, sau đó deploy lại backend.
+Khi sử dụng domain frontend khác, bổ sung chính xác origin đó vào danh sách `allow_origins` trong [backend/main.py](backend/main.py), sau đó deploy lại backend.
 
 ## API endpoints
 
@@ -316,31 +316,31 @@ curl -X POST "http://localhost:8000/api/v1/analyze" \
 
 ## CI/CD
 
-Workflow được cấu hình trong file [\.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml). Workflow được kích hoạt khi có `push` hoặc `pull request` hướng đến nhánh `main`.
+Workflow CI/CD được định nghĩa trong file [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml) và kích hoạt khi có `push` hoặc `pull request` hướng đến nhánh `main`.
 
-Các bước chính trong pipeline hiện tại:
+Các bước chính:
 
 1. Khởi chạy PostgreSQL và kiểm tra schema database.
 2. Cài đặt dependencies của backend và chạy backend tests.
 3. Cài đặt dependencies của frontend và build ứng dụng React.
-4. Build backend Docker image và push lên Docker Hub (chỉ khi push lên nhánh `main`).
-5. Deploy frontend bằng Vercel CLI (chỉ khi push lên nhánh `main`).
+4. Build backend Docker image và push lên Docker Hub khi có push lên nhánh `main`.
+5. Deploy frontend bằng Vercel CLI khi có push lên nhánh `main`.
 
-Thêm các GitHub Actions **Secrets** sau để workflow hoạt động:
+Các GitHub Actions **Secrets** cần cấu hình:
 
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
-- `DATABASE_URL` — connection string của Supabase, được sử dụng ở bước kiểm tra kết nối database trong workflow hiện tại.
+- `DATABASE_URL` — PostgreSQL connection string của Supabase, dùng trong bước kiểm tra kết nối database.
 
-Render và Supabase được cấu hình riêng trong dashboard của từng nền tảng. Backend image được build và push lên Docker Hub; bước deploy Render được quản lý riêng theo cấu hình của Render.
+Render và Supabase được cấu hình riêng trong dashboard của từng nền tảng. Workflow build và push backend image lên Docker Hub; việc triển khai backend trên Render được quản lý theo cấu hình của Render.
 
 ## Bảo mật
 
 - Không commit các file `.env`, `.env.local`, mật khẩu database hoặc API key.
 - Chỉ sử dụng `GEMINI_API_KEY` ở backend.
-- Các tài khoản mặc định trong Docker Compose chỉ dành cho môi trường local; hãy thay đổi trước khi sử dụng trong môi trường chia sẻ hoặc production.
+- Các tài khoản mặc định trong Docker Compose dành cho môi trường local. Thay đổi thông tin xác thực trước khi sử dụng trong môi trường chia sẻ hoặc production.
 - Sử dụng thông tin đăng nhập riêng cho môi trường development và production.
-- Nếu thông tin đăng nhập từng được commit lên repository công khai, hãy đổi (rotate) thông tin đó. Xóa khỏi file mới nhất không đồng nghĩa với việc xóa khỏi Git history.
+- Nếu thông tin đăng nhập bị lộ hoặc từng được commit lên repository công khai, hãy thay đổi (rotate) thông tin đó. Xóa khỏi file mới nhất không đồng nghĩa với việc xóa khỏi Git history.
