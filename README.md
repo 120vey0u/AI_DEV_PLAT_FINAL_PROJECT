@@ -124,7 +124,7 @@ File `docker-compose.yml` định nghĩa ba service: `frontend`, `backend` và `
 Khi chạy `docker compose up --build -d`, Compose build image cho frontend và backend (PostgreSQL sử dụng image `postgres:15-alpine`), sau đó tạo và khởi chạy ba container tương ứng. Đây không phải là một container duy nhất chứa cả ứng dụng.
 
 | Service | Container | Vai trò | Port trên máy host |
-|---|---|---|
+|---|---|---|---|
 | `frontend` | `sentiment_frontend` | React/Vite development server | `3000` |
 | `backend` | `sentiment_backend` | FastAPI REST API | `8000` |
 | `db` | `sentiment_db` | PostgreSQL 15 | `5432` |
@@ -198,15 +198,17 @@ PostgreSQL sử dụng named volume `postgres_data` để lưu dữ liệu. File
 
 **Lưu ý:** Lệnh `docker compose down -v` xóa cả volume `postgres_data` và dữ liệu database local. Chỉ sử dụng lệnh này khi cần reset database.
 
-Trong cấu hình Docker Compose tiêu chuẩn, frontend đã là một service và được chạy trong container `sentiment_frontend` cùng với backend và database. Không cần build hoặc khởi chạy frontend bằng một lệnh Docker riêng.
+#### Tùy chọn: Chạy frontend trực tiếp trên máy host
 
-Nếu muốn phát triển frontend trực tiếp trên máy host thay vì dùng frontend container, hãy sử dụng hướng dẫn ở mục **A. Chạy không sử dụng Docker** cho frontend và đặt `VITE_API_URL=http://localhost:8000`. Khi đó có thể chỉ khởi chạy database và backend bằng:
+Đây là chế độ chạy kết hợp dành cho phát triển, không phải cấu hình Docker Compose tiêu chuẩn. Frontend chạy bằng Node.js trên máy host, còn backend và database vẫn chạy trong container.
+
+Sử dụng hướng dẫn chạy frontend ở mục **A. Chạy không sử dụng Docker**, đặt `VITE_API_URL=http://localhost:8000`, và chỉ khởi chạy hai service backend cùng database bằng:
 
 ```bash
 docker compose up --build -d db backend
 ```
 
-Đây là cách chạy kết hợp tùy chọn dành cho phát triển, không phải bước bổ sung bắt buộc của Docker Compose.
+Trong chế độ này, Compose chỉ quản lý hai container `sentiment_backend` và `sentiment_db`; frontend không chạy trong container.
 
 ## Triển khai hệ thống
 
